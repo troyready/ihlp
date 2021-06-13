@@ -1,0 +1,19 @@
+name: Run integration tests
+description: Deploy infrastructure, test it, and destroy it
+inputs:
+  env_suffix:
+    description: 'Environment suffix'
+    required: true
+runs:
+  using: "composite"
+  steps:
+    - run: echo "Installing node modules"
+      shell: bash
+    - name: Install modules
+      run: npm ci
+      shell: bash
+    - run: echo "Running tests"
+      shell: bash
+    - name: Run integration tests
+      run: ENV_SUFFIX=${{ inputs.env_suffix }} npm run integration
+      shell: bash

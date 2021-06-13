@@ -1,0 +1,14 @@
+.github/
+/coverage
+/docs
+/src
+.eslintignore
+.eslintrc.js
+jest.config.js
+tsconfig.json
+
+*.test.d.ts
+*.test.js
+*.test.js.map
+
+/test

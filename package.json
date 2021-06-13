@@ -1,0 +1,83 @@
+{
+  "bin": {
+    "ihlp": "./lib/cli.js"
+  },
+  "engines": {
+    "node": ">=10.0"
+  },
+  "name": "ihlp",
+  "version": "0.1.0",
+  "dependencies": {
+    "@aws-sdk/client-cloudformation": "^3.19.0",
+    "@aws-sdk/client-cloudfront": "^3.19.0",
+    "@aws-sdk/client-s3": "^3.19.0",
+    "@aws-sdk/client-ssm": "^3.19.0",
+    "@azure/arm-resources": "^4.2.1",
+    "@azure/identity": "^1.5.1",
+    "adm-zip": "^0.5.5",
+    "async": "^3.2.0",
+    "chalk": "^4.1.2",
+    "commander": "^8.0.0",
+    "compare-versions": "^3.6.0",
+    "crc32-stream": "^4.0.2",
+    "dir-compare": "^3.3.0",
+    "folder-hash": "^4.0.1",
+    "md5-file": "^5.0.0",
+    "mime-types": "^2.1.32",
+    "nodegit": "^0.27.0",
+    "prompt-sync": "^4.2.0",
+    "rimraf": "^3.0.2",
+    "s3-sync-client": "^1.5.0",
+    "source-map-support": "^0.5.19",
+    "tmp-promise": "^3.0.2",
+    "ts-node": "^9.1.1",
+    "uuid": "^8.3.2",
+    "which": "^2.0.2"
+  },
+  "devDependencies": {
+    "@aws-sdk/client-lambda": "^3.28.0",
+    "@types/adm-zip": "^0.4.34",
+    "@types/folder-hash": "^4.0.1",
+    "@types/jest": "^26.0.0",
+    "@types/mime-types": "^2.1.1",
+    "@types/node": "^14.14.14",
+    "@types/nodegit": "^0.27.2",
+    "@types/prompt-sync": "^4.1.1",
+    "@types/rimraf": "^3.0.1",
+    "@types/source-map-support": "^0.5.4",
+    "@types/uuid": "^8.3.1",
+    "@types/which": "^2.0.1",
+    "@typescript-eslint/eslint-plugin": "^4.10.0",
+    "@typescript-eslint/parser": "^4.10.0",
+    "eslint": "^7.15.0",
+    "eslint-config-prettier": "^7.0.0",
+    "jest": "^26.0.0",
+    "prettier": "^2.2.1",
+    "ts-jest": "^26.0.0",
+    "ts-loader": "^8.0.12",
+    "typedoc": ">=0.20",
+    "typescript": "^4.1.3"
+  },
+  "description": "Infrastructure/app management helper",
+  "main": "index.js",
+  "scripts": {
+    "prepare": "tsc",
+    "docs": "typedoc",
+    "integration": "ts-node test/index.ts",
+    "format": "prettier src 'test/**/*.ts' -c",
+    "formatfix": "prettier src 'test/**/*.ts' -w",
+    "lint": "eslint src --ext .js,.jsx,.ts,.tsx",
+    "lintfix": "npm run lint -- --fix",
+    "test": "jest",
+    "coverage": "npm test -- --coverage"
+  },
+  "repository": {
+    "type": "git",
+    "url": "github.com/troyready/ihlp"
+  },
+  "author": "Troy Ready",
+  "license": "MIT",
+  "prettier": {
+    "trailingComma": "all"
+  }
+}

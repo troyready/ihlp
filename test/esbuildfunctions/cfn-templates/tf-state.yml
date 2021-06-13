@@ -1,0 +1,76 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Conditions:
+  BucketNameOmitted:
+    Fn::Or:
+    - Fn::Equals:
+      - Ref: BucketName
+      - ''
+    - Fn::Equals:
+      - Ref: BucketName
+      - undefined
+  TableNameOmitted:
+    Fn::Or:
+    - Fn::Equals:
+      - Ref: TableName
+      - ''
+    - Fn::Equals:
+      - Ref: TableName
+      - undefined
+Description: Terraform State Resources
+Outputs:
+  BucketArn:
+    Description: Arn of bucket storing Terraform state
+    Value:
+      Fn::GetAtt:
+        - TerraformStateBucket
+        - Arn
+  BucketName:
+    Description: Name of bucket storing Terraform state
+    Value:
+      Ref: TerraformStateBucket
+  TableName:
+    Description: Name of DynamoDB table for Terraform state
+    Value:
+      Ref: TerraformStateTable
+Parameters:
+  BucketName:
+    Default: ''
+    Description: "(optional) Name for the S3 bucket"
+    Type: String
+  TableName:
+    Default: ''
+    Description: "(optional) Name for the DynamoDB table"
+    Type: String
+Resources:
+  TerraformStateBucket:
+    DeletionPolicy: Delete
+    Properties:
+      AccessControl: Private
+      BucketName:
+        Fn::If:
+          - BucketNameOmitted
+          - Ref: AWS::NoValue
+          - Ref: BucketName
+      LifecycleConfiguration:
+        Rules:
+          - NoncurrentVersionExpirationInDays: 90
+            Status: Enabled
+      VersioningConfiguration:
+        Status: Enabled
+    Type: AWS::S3::Bucket
+  TerraformStateTable:
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: LockID
+          AttributeType: S
+      BillingMode: PAY_PER_REQUEST
+      KeySchema:
+        - AttributeName: LockID
+          KeyType: HASH
+      TableName:
+        Fn::If:
+          - TableNameOmitted
+          - Ref: AWS::NoValue
+          - Ref: TableName
+    Type: AWS::DynamoDB::Table
