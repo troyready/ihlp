@@ -25,4 +25,4 @@ Finally, assign a role to the principal:
 ```bash
 az deployment sub create --confirm-with-what-if --what-if-exclude-change-types NoChange --location eastus --template-file role-assignment.json --parameters principalId=$(az ad sp list --display-name IHLPIntegrationTester --query '[].objectId' --output tsv) builtInRoleType=Owner roleAssignmentGuid=1C7F92B9-C8E8-43A6-BF94-8D3FC5E27A8E
 ```
-([roleNameGuid was generated](https://stackoverflow.com/questions/246930/is-there-any-difference-between-a-guid-and-a-uuid) via `uuidgen| awk '{print toupper($0)}'`)
+([roleAssignmentGuid was generated](https://stackoverflow.com/questions/246930/is-there-any-difference-between-a-guid-and-a-uuid) via `uuidgen| awk '{print toupper($0)}'`)
