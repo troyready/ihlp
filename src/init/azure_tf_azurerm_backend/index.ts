@@ -260,7 +260,7 @@ resource "azurerm_resource_group" "example" {
   }
 
   const stateArmTemplatePath = path.join("arm-templates", "tf-state.json");
-  if (await pathExists(rgTemplatePath)) {
+  if (await pathExists(stateArmTemplatePath)) {
     logGreen(
       "Terraform state storage template file already exists; would have written this to it:",
     );
