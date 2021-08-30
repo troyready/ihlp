@@ -8,7 +8,7 @@ Set `ARM_SUBSCRIPTION_ID` to the ID of the Azure subscription to use (i.e. from 
 
 ### Service Principal
 
-GitHub Actions runs integration tests using an [Azure Service Principal](https://docs.microsoft.com/en-us/cli/azure/create-an-azure-service-principal-azure-cli). Create it using a command line the following:
+GitHub Actions runs integration tests using an [Azure Service Principal](https://docs.microsoft.com/en-us/cli/azure/create-an-azure-service-principal-azure-cli). Create it using a command like the following:
 
 ```bash
 az ad sp create-for-rbac --skip-assignment --name IHLPIntegrationTester
