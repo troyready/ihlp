@@ -1,8 +1,10 @@
 name: Lint and Unit Test
 
 on:
-  - pull_request
-  - push
+  push:
+    branches:
+      - main
+  pull_request: {}
 
 jobs:
   test:
