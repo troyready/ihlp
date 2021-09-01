@@ -71,6 +71,7 @@ const ihlpConfig: IHLPConfig = {
             deploymentParameters: {
               storageAccountName:
                 envOptions[process.env.IHLP_ENV].storageAccountName,
+              tags: envOptions[process.env.IHLP_ENV].tags,
             },
             subscriptionId: envOptions[process.env.IHLP_ENV].azureSubId,
             templatePath: "./arm-templates/tf-state.json",
@@ -146,12 +147,6 @@ module.exports = ihlpConfig;
   "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
   "contentVersion": "1.0.0.0",
   "parameters": {
-    "storageAccountName": {
-      "type": "string",
-      "metadata": {
-        "description": "Specifies the name of the Azure Storage account."
-      }
-    },
     "containerName": {
       "type": "string",
       "defaultValue": "tfstate",
@@ -164,6 +159,19 @@ module.exports = ihlpConfig;
       "defaultValue": "[resourceGroup().location]",
       "metadata": {
         "description": "Specifies the location in which the Azure Storage resources should be deployed."
+      }
+    },
+    "storageAccountName": {
+      "type": "string",
+      "metadata": {
+        "description": "Specifies the name of the Azure Storage account."
+      }
+    },
+    "tags": {
+      "defaultValue": {},
+      "type": "object",
+      "metadata": {
+        "description": "Resource tags."
       }
     }
   },
@@ -190,7 +198,8 @@ module.exports = ihlpConfig;
             "[parameters('storageAccountName')]"
           ]
         }
-      ]
+      ],
+      "tags": "[parameters('tags')]"
     }
   ]
 }
