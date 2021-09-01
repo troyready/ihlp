@@ -46,6 +46,7 @@ const ihlpConfig: IHLPConfig = {
             },
             deploymentParameters: {
               storageAccountName: storageName,
+              tags: tags,
             },
             subscriptionId: azureSubId,
             templatePath: "./arm-templates/tf-state.json",

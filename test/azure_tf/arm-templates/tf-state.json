@@ -2,12 +2,6 @@
     "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
     "contentVersion": "1.0.0.0",
     "parameters": {
-      "storageAccountName": {
-        "type": "string",
-        "metadata": {
-          "description": "Specifies the name of the Azure Storage account."
-        }
-      },
       "containerName": {
         "type": "string",
         "defaultValue": "tfstate",
@@ -20,6 +14,19 @@
         "defaultValue": "[resourceGroup().location]",
         "metadata": {
           "description": "Specifies the location in which the Azure Storage resources should be deployed."
+        }
+      },
+      "storageAccountName": {
+        "type": "string",
+        "metadata": {
+          "description": "Specifies the name of the Azure Storage account."
+        }
+      },
+      "tags": {
+        "defaultValue": {},
+        "type": "object",
+        "metadata": {
+          "description": "Resource tags."
         }
       }
     },
@@ -46,7 +53,8 @@
               "[parameters('storageAccountName')]"
             ]
           }
-        ]
+        ],
+        "tags": "[parameters('tags')]"
       }
     ]
   }
