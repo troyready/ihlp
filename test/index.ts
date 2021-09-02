@@ -8,8 +8,6 @@ import * as fs from "fs";
 import { azureTfTests } from "./azure_tf";
 import { esbuildFunctionsTest } from "./esbuildfunctions/index";
 
-export async function runAzure() {}
-
 /** Return true if provided path exists */
 export async function pathExists(filepath: string): Promise<boolean> {
   try {

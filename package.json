@@ -64,12 +64,13 @@
     "prepare": "tsc",
     "docs": "typedoc",
     "integration": "ts-node test/index.ts",
-    "format": "prettier src 'test/**/*.ts' -c",
-    "formatfix": "prettier src 'test/**/*.ts' -w",
+    "format": "prettier scripts src 'test/**/*.ts' -c",
+    "formatfix": "prettier scripts src 'test/**/*.ts' -w",
     "lint": "eslint src --ext .js,.jsx,.ts,.tsx",
     "lintfix": "npm run lint -- --fix",
     "test": "jest",
-    "coverage": "npm test -- --coverage"
+    "coverage": "npm test -- --coverage",
+    "release": "ts-node scripts/create_release.ts"
   },
   "repository": {
     "type": "git",

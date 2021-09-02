@@ -2,6 +2,7 @@
 /coverage
 /docs
 /src
+/scripts
 .eslintignore
 .eslintrc.js
 jest.config.js
