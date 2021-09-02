@@ -34,6 +34,7 @@ async function createRelease() {
   let releaseNotes = "";
   let currentVersion = "";
 
+  console.log("Checking GitHub CLI login status...");
   exitCode = spawnSync("gh", ["auth", "status"], { stdio: "inherit" }).status;
   if (exitCode != 0) {
     console.log(chalk.red("ERROR: Log into GitHub CLI first (gh auth login)"));
@@ -97,7 +98,7 @@ async function createRelease() {
     console.log("Generating git commit...");
     exitCode = spawnSync(
       "git",
-      ["commit", "-a", "-S", `--message="v${newVersion}"`],
+      ["commit", "-a", "-S", "-m", "v" + newVersion],
       {
         cwd: rootPath,
         stdio: "inherit",
