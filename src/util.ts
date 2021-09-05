@@ -113,20 +113,20 @@ export async function httpsRequest(
   params: https.RequestOptions | string | URL,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   postData: any = undefined,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-): Promise<any> {
+): Promise<string> {
   return new Promise(function (resolve, reject) {
     const req = https.request(params, function (res) {
       if (!res.statusCode || res.statusCode < 200 || res.statusCode >= 300) {
         return reject(new Error("Bad HTTP status code: " + res.statusCode));
       }
-      let body: Uint8Array[] = [];
+      const bodyParts: Uint8Array[] = [];
+      let body: string;
       res.on("data", function (chunk) {
-        body.push(chunk);
+        bodyParts.push(chunk);
       });
       res.on("end", function () {
         try {
-          body = JSON.parse(Buffer.concat(body).toString());
+          body = Buffer.concat(bodyParts).toString();
         } catch (e) {
           reject(e);
         }
