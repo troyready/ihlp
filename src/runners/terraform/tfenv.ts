@@ -209,12 +209,14 @@ export class TFEnv {
   async getReleasedTerraformVersions(
     includePrelease = false,
   ): Promise<string[]> {
-    const releases = await httpsRequest({
-      hostname: "releases.hashicorp.com",
-      port: 443,
-      path: "/index.json",
-      method: "GET",
-    });
+    const releases = JSON.parse(
+      await httpsRequest({
+        hostname: "releases.hashicorp.com",
+        port: 443,
+        path: "/index.json",
+        method: "GET",
+      }),
+    );
     const descendingVersions = Object.keys(releases.terraform.versions)
       .sort(compareVersions)
       .reverse();
