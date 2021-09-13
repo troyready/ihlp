@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [0.1.3] - 2021-09-12
 ### Added
 - Support auto-approving deployments on additional CI platforms (via `@npmcli/ci-detect` library)
 
@@ -20,7 +22,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Initial commit
 
-[Unreleased]: https://github.com/troyready/ihlp/compare/v0.1.2...HEAD
+[Unreleased]: https://github.com/troyready/ihlp/compare/v0.1.3...HEAD
+[0.1.3]: https://github.com/troyready/ihlp/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/troyready/ihlp/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/troyready/ihlp/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/troyready/ihlp/releases/tag/v0.1.0
