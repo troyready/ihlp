@@ -4,6 +4,7 @@
  * @packageDocumentation
  */
 
+import * as ciDetect from "@npmcli/ci-detect";
 import { spawnSync } from "child_process";
 import { CommandOptions } from "commander";
 import * as chalk from "chalk";
@@ -56,7 +57,7 @@ class IHLP {
     if (!("IHLP_ENV" in process.env)) {
       process.env["IHLP_ENV"] = this.options.environment;
     }
-    if (process.env.CI) {
+    if (ciDetect() as boolean | string) {
       this.options.autoApprove = true;
     }
   }

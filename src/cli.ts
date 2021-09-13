@@ -23,7 +23,7 @@ program
   .option("-v, --verbose", "increase output verbosity")
   .option(
     "-a, --auto-approve",
-    'perform all actions without prompting (same as "CI" environment variable)',
+    "perform all actions without prompting (same as setting CI environment variable)",
   )
   .option(
     "-e, --environment <environment-name>",
@@ -42,7 +42,7 @@ program
   .option("-v, --verbose", "increase output verbosity")
   .option(
     "-a, --auto-approve",
-    'perform all actions without prompting (same as "CI" environment variable)',
+    "perform all actions without prompting (same as setting CI environment variable)",
   )
   .option(
     "-e, --environment <environment-name>",
