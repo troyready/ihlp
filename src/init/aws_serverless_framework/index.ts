@@ -53,7 +53,7 @@ module.exports = ihlpConfig;
     const tmpDir = await tmp.dir({ unsafeCleanup: true });
     const dlPath = path.join(tmpDir.path, "git-lfs-s3.zip");
     await httpsGetToFile(
-      "https://codeload.github.com/troyready/git-lfs-s3/zip/refs/heads/main",
+      "https://github.com/troyready/git-lfs-s3/archive/refs/heads/main.zip",
       dlPath,
     );
     const dlZip = new admzip(dlPath);

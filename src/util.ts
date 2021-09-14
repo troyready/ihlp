@@ -6,11 +6,13 @@
 
 import * as chalk from "chalk";
 import * as crypto from "crypto";
+import { https, FollowOptions } from "follow-redirects";
 import * as fs from "fs";
-import * as https from "https";
+import { RequestOptions } from "https";
 import * as path from "path";
 import { Readable } from "stream";
 import { Repository } from "nodegit";
+import { SecureContextOptions } from "tls";
 import { GetObjectCommand, S3Client } from "@aws-sdk/client-s3";
 
 import { Command, Runner, runnerOpts } from "./runners";
@@ -110,12 +112,20 @@ export async function getFileHash(
 
 /** Make HTTPS request */
 export async function httpsRequest(
-  params: https.RequestOptions | string | URL,
+  options:
+    | string
+    | (
+        | RequestOptions
+        | (SecureContextOptions & {
+            rejectUnauthorized?: boolean | undefined;
+            servername?: string | undefined;
+          } & FollowOptions<RequestOptions>)
+      ),
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   postData: any = undefined,
 ): Promise<string> {
   return new Promise(function (resolve, reject) {
-    const req = https.request(params, function (res) {
+    const req = https.request(options, function (res) {
       if (!res.statusCode || res.statusCode < 200 || res.statusCode >= 300) {
         return reject(new Error("Bad HTTP status code: " + res.statusCode));
       }
@@ -145,13 +155,21 @@ export async function httpsRequest(
 
 /** Download to local file */
 export async function httpsGetToFile(
-  url: string,
+  options:
+    | string
+    | (
+        | RequestOptions
+        | (SecureContextOptions & {
+            rejectUnauthorized?: boolean | undefined;
+            servername?: string | undefined;
+          } & FollowOptions<RequestOptions>)
+      ),
   filePath: string,
 ): Promise<void> {
   return new Promise((resolve, reject) => {
     const writeStream = fs.createWriteStream(filePath, { flags: "wx" });
 
-    const request = https.get(url, (response) => {
+    const request = https.get(options, (response) => {
       if (response.statusCode === 200) {
         response.pipe(writeStream);
       } else {

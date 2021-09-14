@@ -6,11 +6,14 @@
 
 import * as admzip from "adm-zip";
 import compareVersions from "compare-versions";
+import { FollowOptions } from "follow-redirects";
 import * as fs from "fs";
+import { RequestOptions } from "https";
 import * as os from "os";
 import * as path from "path";
 import * as readline from "readline";
 import * as tmp from "tmp-promise";
+import { URL } from "url";
 
 import {
   getFileHash,
@@ -75,13 +78,18 @@ async function downloadVersion(
   try {
     const downloadFilename = `terraform_${version}_${tfPlatform}.zip`;
     const sha256sumsFilename = `terraform_${version}_SHA256SUMS`;
-    const baseDownloadUrl = `https://releases.hashicorp.com/terraform/${version}/`;
+    const baseDownloadUrl = `${
+      process.env.TFENV_REMOTE
+        ? process.env.TFENV_REMOTE
+        : "https://releases.hashicorp.com"
+    }/terraform/${version}/`;
 
     const downloadArchiveFullPath = path.join(tmpDir.path, downloadFilename);
-    await httpsGetToFile(
+    const archiveDownloadOpts = new URL(
       baseDownloadUrl + downloadFilename,
-      downloadArchiveFullPath,
-    );
+    ) as FollowOptions<RequestOptions>;
+    archiveDownloadOpts.maxBodyLength = 50 * 1024 * 1024;
+    await httpsGetToFile(archiveDownloadOpts, downloadArchiveFullPath);
     const downloadSha256sumsFullPath = path.join(
       tmpDir.path,
       sha256sumsFilename,
@@ -209,10 +217,20 @@ export class TFEnv {
   async getReleasedTerraformVersions(
     includePrelease = false,
   ): Promise<string[]> {
+    const parsedUrl = new URL(
+      process.env.TFENV_REMOTE
+        ? process.env.TFENV_REMOTE
+        : "https://releases.hashicorp.com",
+    );
+    if (parsedUrl.protocol != "https:") {
+      logErrorRed("TFENV_REMOTE must be set to a https URL");
+      process.exit(1);
+    }
+
     const releases = JSON.parse(
       await httpsRequest({
-        hostname: "releases.hashicorp.com",
-        port: 443,
+        hostname: parsedUrl.hostname,
+        port: parsedUrl.port ? parsedUrl.port : 443,
         path: "/index.json",
         method: "GET",
       }),
