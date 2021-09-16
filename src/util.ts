@@ -10,6 +10,8 @@ import { https, FollowOptions } from "follow-redirects";
 import * as fs from "fs";
 import { RequestOptions } from "https";
 import * as path from "path";
+import * as stream from "stream";
+import { Extract } from "unzipper";
 import { Readable } from "stream";
 import { Repository } from "nodegit";
 import { SecureContextOptions } from "tls";
@@ -48,6 +50,18 @@ export async function downloadS3ObjectToFile(
     logErrorRed(`Error downloading ${objectKey}; no content present`);
     process.exit(1);
   }
+}
+
+/** Extract zip stream */
+export function extractZipToPath(
+  zipStream: stream.Readable,
+  outputPath: string,
+): Promise<void> {
+  return new Promise((resolve) => {
+    zipStream.pipe(Extract({ path: outputPath })).on("close", () => {
+      resolve();
+    });
+  });
 }
 
 /** Instantiate and return appropriate class for block type */

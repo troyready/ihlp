@@ -4,7 +4,6 @@
  * @packageDocumentation
  */
 
-import * as admzip from "adm-zip";
 import compareVersions from "compare-versions";
 import { FollowOptions } from "follow-redirects";
 import * as fs from "fs";
@@ -16,6 +15,7 @@ import * as tmp from "tmp-promise";
 import { URL } from "url";
 
 import {
+  extractZipToPath,
   getFileHash,
   httpsRequest,
   httpsGetToFile,
@@ -115,8 +115,10 @@ async function downloadVersion(
       process.exit(1);
     }
 
-    const zip = new admzip(downloadArchiveFullPath);
-    zip.extractAllTo(tmpDir.path);
+    await extractZipToPath(
+      fs.createReadStream(downloadArchiveFullPath),
+      tmpDir.path,
+    );
 
     await fs.promises.mkdir(path.join(versionsDir, version));
     await fs.promises.rename(

@@ -4,7 +4,6 @@
  * @packageDocumentation
  */
 
-import * as admzip from "adm-zip";
 import {
   CloudFrontClient,
   CloudFrontClientConfig,
@@ -34,6 +33,7 @@ import { spawnSync } from "child_process";
 import { Runner } from "../";
 import {
   downloadS3ObjectToFile,
+  extractZipToPath,
   logErrorRed,
   logGreen,
   mergeObjIntoEnv,
@@ -95,10 +95,9 @@ export class SyncToRemoteStorage extends Runner {
       objectKey.includes("/") ? objectKey.split("/").slice(-1)[0] : objectKey,
     );
     await downloadS3ObjectToFile(s3Client, bucketName, objectKey, tmpFilePath);
-    const unZipDir = await tmp.dir({ unsafeCleanup: true });
-    const zip = new admzip(tmpFilePath);
-    zip.extractAllTo(unZipDir.path);
-    return unZipDir.path;
+    const tmpDir = await tmp.dir({ unsafeCleanup: true });
+    await extractZipToPath(fs.createReadStream(tmpFilePath), tmpDir.path);
+    return tmpDir.path;
   }
 
   /** Create zip file of directory and copy it to AWS S3 */

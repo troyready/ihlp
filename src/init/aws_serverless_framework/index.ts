@@ -4,11 +4,15 @@
  * @packageDocumentation
  */
 
-import * as admzip from "adm-zip";
 import * as fs from "fs";
 import * as path from "path";
 import * as tmp from "tmp-promise";
-import { httpsGetToFile, logGreen, pathExists } from "../../util";
+import {
+  extractZipToPath,
+  httpsGetToFile,
+  logGreen,
+  pathExists,
+} from "../../util";
 
 export async function awsServerlessFramework(): Promise<void> {
   const slsProjectPath = "git-lfs-s3.sls";
@@ -56,8 +60,7 @@ module.exports = ihlpConfig;
       "https://github.com/troyready/git-lfs-s3/archive/refs/heads/main.zip",
       dlPath,
     );
-    const dlZip = new admzip(dlPath);
-    dlZip.extractAllTo(tmpDir.path);
+    await extractZipToPath(fs.createReadStream(dlPath), tmpDir.path);
     await fs.promises.rename(
       path.join(tmpDir.path, "git-lfs-s3-main"),
       slsProjectPath,
