@@ -70,7 +70,7 @@ async function createRelease() {
     await fs.promises.writeFile(
       packageJsonFilePath,
       packageContents.replace(
-        /^  "version": ".*",/gm,
+        /^ {2}"version": ".*",/gm,
         `  "version": "${newVersion}",`,
       ),
     );
