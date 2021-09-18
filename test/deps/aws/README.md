@@ -13,7 +13,7 @@ aws cloudformation describe-stacks --region us-west-2 --stack-name prod-ihlp-rep
 aws iam create-access-key --user-name $(aws cloudformation describe-stacks --region us-west-2 --stack-name prod-ihlp-repo-inttest-user --query 'Stacks[0].Outputs[?OutputKey==`UserName`].OutputValue' --output text)
 ```
 
-Create Then set the repository secrets:
+Then create the repository secrets:
 
 * `IHLP_AWS_ROLE_BOUNDARY_ARN` - set to the `BoundaryPolicyArn` stack output
 * `AWS_ACCESS_KEY_ID` - set to the value of `AccessKeyId`
