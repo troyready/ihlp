@@ -1,18 +1,26 @@
 ---
 AWSTemplateFormatVersion: '2010-09-09'
-Description: IAM User for integration teseting
+Description: IAM Role for integration teseting
 Outputs:
   BoundaryPolicyArn:
-    Description: Arn of IAM Managed Policy for user-created roles
+    Description: Arn of IAM Managed Policy to be used as a permissions boundary
     Value:
       Ref: BoundaryPolicy
-  UserName:
-    Description: Name of IAM User
+  RoleArn:
+    Description: Arn of IAM Role
     Value:
-      Ref: User
+      Fn::GetAtt:
+        - Role
+        - Arn
 Parameters:
   EnvironmentName:
-    Description: "Name of environment for the user (used as a prefix to the name)"
+    Description: "Name of environment for the role (used in tags)"
+    Type: String
+  RepoName:
+    Description: "Name of GitHub repo"
+    Type: String
+  ServiceName:
+    Description: "Name of project"
     Type: String
 Resources:
   BoundaryPolicy:
@@ -37,10 +45,10 @@ Resources:
                   - ":"
                   - Ref: AWS::AccountId
                   - :log-group:/aws/lambda/inttest*
-  UserPolicy:
+  PermissionsPolicy:
     Type: AWS::IAM::ManagedPolicy
     Properties:
-      Description: User permissions policy
+      Description: Role permissions policy
       PolicyDocument:
         Version: "2012-10-17"
         Statement:
@@ -184,16 +192,26 @@ Resources:
                   - ":"
                   - Ref: AWS::AccountId
                   - :parameter/inttest*
-  User:
-    Type: AWS::IAM::User
+  Role:
+    Type: AWS::IAM::Role
     Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Action: sts:AssumeRoleWithWebIdentity
+            Principal:
+              Federated: !Sub arn:${AWS::Partition}:iam::${AWS::AccountId}:oidc-provider/vstoken.actions.githubusercontent.com
+            Condition:
+              StringLike:
+                vstoken.actions.githubusercontent.com:sub: !Sub repo:${RepoName}:*
       ManagedPolicyArns:
-        - Ref: UserPolicy
+        - Ref: PermissionsPolicy
       Tags:
         - Key: Environment
           Value:
             Ref: EnvironmentName
         - Key: Project
-          Value: ihlp
+          Value:
+            Ref: ServiceName
         - Key: Purpose
           Value: Integration Testing

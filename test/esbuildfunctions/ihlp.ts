@@ -1,6 +1,6 @@
 import type { IHLPConfig } from "ihlp/lib/config";
 
-if (!process.env.IHLP_ENV || !process.env.IHLP_AWS_ROLE_BOUNDARY_ARN) {
+if (!process.env.IHLP_ENV || !process.env.AWS_PERMISSIONS_BOUNDARY_ARN) {
   console.error("Missing required environment variables!");
   process.exit(1);
 }
@@ -54,7 +54,7 @@ const ihlpConfig: IHLPConfig = {
             variables: {
               node_version: nodeVersion,
               region: "${env IHLP_LOCATION}",
-              role_boundary_arn: process.env.IHLP_AWS_ROLE_BOUNDARY_ARN,
+              role_boundary_arn: process.env.AWS_PERMISSIONS_BOUNDARY_ARN,
               tags: tags,
             },
           },
