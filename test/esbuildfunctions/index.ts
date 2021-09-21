@@ -4,6 +4,7 @@
  * @packageDocumentation
  */
 
+import * as ciDetect from "@npmcli/ci-detect";
 import * as fs from "fs";
 import * as path from "path";
 import { pathExists } from "../index";
@@ -17,7 +18,7 @@ const distPath = path.join("example.tf", "dist");
 const helloWorldZipPath = path.join(distPath, "helloWorld.zip");
 
 /** Run tests */
-export async function esbuildFunctionsTest() {
+export async function esbuildFunctionsTest(): Promise<void> {
   console.log("Starting esbuild functions integration tests");
   const origWorkingDir = process.cwd();
   try {
@@ -28,7 +29,6 @@ export async function esbuildFunctionsTest() {
     const env = process.env.ENV_SUFFIX
       ? "inttest" + process.env.ENV_SUFFIX
       : "inttest";
-    const runningInCI = !!process.env.CI;
     let exitCode: number | null;
 
     console.log("Installing ihlp...");
@@ -52,7 +52,7 @@ export async function esbuildFunctionsTest() {
       console.log("Deploy successful; testing it");
       const functionName = env + "-hello-world";
       const lambdaClient = new LambdaClient({ region: "us-west-2" });
-      let lambdaResponsePayload: string = "";
+      let lambdaResponsePayload = "";
       try {
         const lambdaResponse = await lambdaClient.send(
           new InvokeCommand({
@@ -84,7 +84,7 @@ export async function esbuildFunctionsTest() {
         process.exit(exitCode ? exitCode : 1);
       }
     } else {
-      if (runningInCI) {
+      if (ciDetect() as boolean | string) {
         const deployExitCode = exitCode;
         console.error(
           `Deployment in environment ${env} failed; running destroy...`,

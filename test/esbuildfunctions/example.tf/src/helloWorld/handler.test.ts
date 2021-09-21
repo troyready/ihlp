@@ -10,7 +10,7 @@ import { handler } from "./handler";
 
 /** Mock callback function for handler invocations */
 function unusedCallback<T>() {
-  return undefined as any as T;
+  return undefined as any as T; // eslint-disable-line @typescript-eslint/no-explicit-any
 }
 
 /** Helper for generating input for Lambda from AWS API Gateway */
@@ -79,7 +79,7 @@ describe("Handler tests", () => {
     const handlerReturn = await handler(
       {} as APIGatewayProxyEvent,
       {} as Context,
-      unusedCallback<any>(),
+      unusedCallback<any>(), // eslint-disable-line @typescript-eslint/no-explicit-any
     );
     expect(handlerReturn).toMatchObject({ statusCode: 400 });
   });
@@ -93,7 +93,7 @@ describe("Handler tests", () => {
         queryStringParameters: null,
       }),
       {} as Context,
-      unusedCallback<any>(),
+      unusedCallback<any>(), // eslint-disable-line @typescript-eslint/no-explicit-any
     );
     expect(handlerReturn).toMatchObject({
       body: '{"message":"Hello world"}',

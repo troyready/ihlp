@@ -17,7 +17,7 @@ export const handler: APIGatewayProxyHandler = async (
   event: APIGatewayProxyEvent,
   context: Context, // eslint-disable-line @typescript-eslint/no-unused-vars
 ): Promise<APIGatewayProxyResult> => {
-  let body: any = {};
+  let body: any = {}; // eslint-disable-line @typescript-eslint/no-explicit-any
   if (event.body) {
     body = JSON.parse(event.body);
   } else {

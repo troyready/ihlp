@@ -58,7 +58,6 @@
     "jest": "^26.0.0",
     "prettier": "^2.2.1",
     "ts-jest": "^26.0.0",
-    "ts-loader": "^8.0.12",
     "typedoc": ">=0.20",
     "typescript": "^4.1.3"
   },
@@ -68,9 +67,7 @@
     "prepare": "tsc",
     "docs": "typedoc",
     "integration": "ts-node test/index.ts",
-    "format": "prettier scripts src 'test/**/*.ts' -c",
-    "formatfix": "prettier scripts src 'test/**/*.ts' -w",
-    "lint": "eslint scripts src --ext .js,.jsx,.ts,.tsx",
+    "lint": "eslint scripts src test .eslintrc.js jest.config.js --ext .js,.jsx,.ts,.tsx",
     "lintfix": "npm run lint -- --fix",
     "test": "jest",
     "coverage": "npm test -- --coverage",
