@@ -13,7 +13,6 @@ jobs:
     if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
     permissions:
       id-token: write
-      contents: read
     env:
       ARM_SUBSCRIPTION_ID:  ${{ secrets.ARM_SUBSCRIPTION_ID }}
       ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
@@ -38,6 +37,7 @@ jobs:
       contains(github.event.client_payload.pull_request.head.sha, github.event.client_payload.slash_command.sha)
     permissions:
       id-token: write
+      checks: write
       contents: write
     env:
       ARM_SUBSCRIPTION_ID:  ${{ secrets.ARM_SUBSCRIPTION_ID }}
