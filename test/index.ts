@@ -23,7 +23,7 @@ export async function pathExists(filepath: string): Promise<boolean> {
 }
 
 /** Run tests */
-export async function test() {
+export async function test(): Promise<void> {
   await azureTfTests();
   await esbuildFunctionsTest();
 }

@@ -17,8 +17,6 @@ jobs:
         run: npm ci
       - name: Run linter
         run: npm run lint
-      - name: Check formatting
-        run: npm run format
       - name: Run unit tests
         # TODO: switch to coverage when 80% threshold met
         # run: npm run coverage

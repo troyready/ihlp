@@ -4,12 +4,13 @@
  * @packageDocumentation
  */
 
+import * as ciDetect from "@npmcli/ci-detect";
 import { spawnSync } from "child_process";
 import { DefaultAzureCredential } from "@azure/identity";
 import { ResourceManagementClient } from "@azure/arm-resources";
 
 /** Run tests */
-export async function azureTfTests() {
+export async function azureTfTests(): Promise<void> {
   if (!process.env.ARM_SUBSCRIPTION_ID) {
     console.error(
       "Azure Subscription ID needs to be set as environment variable ARM_SUBSCRIPTION_ID",
@@ -26,7 +27,6 @@ export async function azureTfTests() {
     const env = process.env.ENV_SUFFIX
       ? "inttest" + process.env.ENV_SUFFIX
       : "inttest";
-    const runningInCI = !!process.env.CI;
     let exitCode: number | null;
 
     console.log("Installing ihlp...");
@@ -48,7 +48,7 @@ export async function azureTfTests() {
         stdio: "inherit",
       }).status;
       if (exitCode != 0) {
-        if (runningInCI) {
+        if (ciDetect() as boolean | string) {
           await deleteResourceGroup(env, process.env.ARM_SUBSCRIPTION_ID);
         } else {
           console.error("Error encountered while destroying test resources");
@@ -56,7 +56,7 @@ export async function azureTfTests() {
         process.exit(exitCode ? exitCode : 1);
       }
     } else {
-      if (runningInCI) {
+      if (ciDetect() as boolean | string) {
         const deployExitCode = exitCode;
         console.error(
           `Terraform to Azure deployment in environment ${env} failed; running destroy...`,
