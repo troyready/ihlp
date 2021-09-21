@@ -66,8 +66,9 @@ export async function esbuildFunctionsTest(): Promise<void> {
           lambdaResponse.Payload,
         );
         console.log("Test successful; destroying it");
-      } catch {
-        console.error("Error encountered when testing deployed function");
+      } catch (error) {
+        console.error("Error encountered when testing deployed function:");
+        console.error(JSON.stringify(error));
         console.log("Destroying deployment");
       }
       exitCode = spawnSync(npxBinary, ["ihlp", "destroy", "-a", "-e", env], {

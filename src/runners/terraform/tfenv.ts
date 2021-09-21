@@ -62,7 +62,12 @@ async function downloadVersion(
   fileSuffix: string,
   versionsDir: string,
 ): Promise<void> {
-  let tfArch = "amd64";
+  let tfArch =
+    process.arch == "x64"
+      ? "amd64"
+      : process.arch == "x32"
+      ? "386"
+      : process.arch;
   if (process.env.TFENV_ARCH) {
     tfArch = process.env.TFENV_ARCH;
   }
