@@ -20,7 +20,7 @@ cd myproject
 npx ihlp init
 ```
 
-The initialization process will have you choose a starter template. Custom it and deploy it via `npx ihlp deploy`.
+The initialization process will have you choose a starter template. Custom it and deploy it via `npx ihlp deploy -e dev`.
 
 ## Uses
 

@@ -14,7 +14,6 @@ import { init } from "./init/index";
 import {
   generateValidChoiceSelections,
   getBlockRunner,
-  getEnvFromRepo,
   loadConfig,
   logBanner,
   logGreen,
@@ -48,14 +47,16 @@ class IHLP {
 
   /** Setup class options */
   async setupOptions(): Promise<void> {
-    if (!this.options.environment) {
-      if (this.options.verbose) {
-        logGreen("Setting environment from git branch...");
-      }
-      this.options.environment = await getEnvFromRepo();
+    if (!this.options.environment && !process.env.IHLP_ENV) {
+      logErrorRed(
+        "Please provide environment (-e option or IHLP_ENV environment variable)",
+      );
+      process.exit(1);
     }
-    if (!("IHLP_ENV" in process.env)) {
+    if (this.options.environment) {
       process.env["IHLP_ENV"] = this.options.environment;
+    } else {
+      this.options.environment = process.env["IHLP_ENV"];
     }
     if (ciDetect() as boolean | string) {
       this.options.autoApprove = true;
