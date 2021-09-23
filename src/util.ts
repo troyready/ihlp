@@ -11,7 +11,6 @@ import * as fs from "fs";
 import { RequestOptions } from "https";
 import * as path from "path";
 import { Readable } from "stream";
-import { Repository } from "nodegit";
 import { SecureContextOptions } from "tls";
 import { GetObjectCommand, S3Client } from "@aws-sdk/client-s3";
 
@@ -242,41 +241,6 @@ export function generateValidChoiceSelections(
   return Array.from({ length: choices.length + 1 }, (_x, i) =>
     i.toString(),
   ).slice(1);
-}
-
-/** Determine operating environment from git repo */
-export async function getEnvFromRepo(): Promise<string> {
-  let branchName: string;
-  try {
-    branchName = await Repository.open(process.cwd())
-      .then(function (repo) {
-        return repo.getCurrentBranch();
-      })
-      .then(function (branch) {
-        return branch.name();
-      });
-  } catch (err) {
-    logErrorRed(
-      "No environment provided & an error was encountered determining it from the git branch",
-    );
-    process.exit(1);
-  }
-  if (branchName.startsWith("refs/heads/")) {
-    branchName = branchName.replace(/^(refs\/heads\/)/, "");
-  }
-  if (["main", "master"].includes(branchName)) {
-    logGreen(
-      `Automatically setting environment name to prod based on git branch name ${branchName}`,
-    );
-    branchName = "prod";
-  }
-  if (branchName.startsWith("ENV-")) {
-    branchName = branchName.replace(/^(ENV-)/, "");
-    logGreen(
-      `Automatically setting environment name to ${branchName} based on git branch name ENV-${branchName}`,
-    );
-  }
-  return branchName;
 }
 
 /** Log initial command banner */
