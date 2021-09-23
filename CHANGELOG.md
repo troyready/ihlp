@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Deployment on ARM fixed (dropped `nodegit` package)
   - Automatic environment detection from git branch dropped for now
 
+### Changed
+- Switched to `archiver` for zip file generation
+
 ## [0.1.5] - 2021-09-21
 ### Fixed
 - Terraform will now download the correct build for the system architecture

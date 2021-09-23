@@ -23,14 +23,9 @@ import {
   logWarningYellow,
   mergeObjIntoEnv,
   pathExists,
+  zipDirectory,
 } from "../../util";
 import { Runner } from "../";
-import * as util from "util";
-// https://github.com/bitgenics/deterministic-zip/pull/14
-// import * as zip from 'deterministic-zip';
-import { zip } from "../../vendored/deterministic-zip";
-
-const zipPromise = util.promisify(zip);
 
 /** Build functions using esbuild and (optionally) cache them */
 export class EsbuildFunctions extends Runner {
@@ -240,9 +235,7 @@ export class EsbuildFunctions extends Runner {
     // https://github.com/hashicorp/terraform-provider-archive/issues/34
     const fullyQualifiedApiDirectory = path.join(this.block.path, outputDir);
     const fullyQualifiedZipfilename = fullyQualifiedApiDirectory + ".zip";
-    await zipPromise(fullyQualifiedApiDirectory, fullyQualifiedZipfilename, {
-      cwd: fullyQualifiedApiDirectory,
-    });
+    await zipDirectory(fullyQualifiedZipfilename, fullyQualifiedApiDirectory);
     return fullyQualifiedZipfilename;
   }
 }
