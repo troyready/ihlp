@@ -4,6 +4,7 @@
  * @packageDocumentation
  */
 
+import { create as createArchive } from "archiver";
 import * as chalk from "chalk";
 import * as crypto from "crypto";
 import { https, FollowOptions } from "follow-redirects";
@@ -303,4 +304,24 @@ export async function pathExists(filepath: string): Promise<boolean> {
     }
   }
   return true;
+}
+
+/** Zip directory (contents have timestamps zeroed out for idempotent builds) */
+export async function zipDirectory(
+  zippath: string,
+  dirpath: string,
+): Promise<void> {
+  const archive = createArchive("zip");
+  const output = fs.createWriteStream(zippath);
+  archive.pipe(output);
+  archive.directory(dirpath, "", { date: new Date(0) });
+  await archive.finalize();
+  return new Promise((resolve, reject) => {
+    archive.on("error", function (err) {
+      reject(err);
+    });
+    output.on("close", function () {
+      resolve();
+    });
+  });
 }

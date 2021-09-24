@@ -37,18 +37,13 @@ import {
   logErrorRed,
   logGreen,
   mergeObjIntoEnv,
+  zipDirectory,
 } from "../../util";
 import type {
   BuildOpts,
   ActionName,
   SyncToRemoteStorageBlock,
 } from "../../config";
-import * as util from "util";
-// https://github.com/bitgenics/deterministic-zip/pull/14
-// import * as zip from 'deterministic-zip';
-import { zip } from "../../vendored/deterministic-zip";
-
-const zipPromise = util.promisify(zip);
 
 /** Sync local directory to remote object storage */
 export class SyncToRemoteStorage extends Runner {
@@ -110,9 +105,7 @@ export class SyncToRemoteStorage extends Runner {
   ): Promise<void> {
     const zipDir = await tmp.dir({ unsafeCleanup: true });
     const localZipFile = path.join(zipDir.path, "cachedbuild.zip");
-    await zipPromise(dirPath, localZipFile, {
-      cwd: dirPath,
-    });
+    await zipDirectory(localZipFile, dirPath);
     logGreen(
       `Backing up new bucket archive to s3://${bucketName}/${objectKey}`,
     );
