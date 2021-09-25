@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [0.1.7] - 2021-09-24
 ### Fixed
 - Move typescript to regular dependencies to fix ts-node
 
@@ -41,7 +43,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Initial commit
 
-[Unreleased]: https://github.com/troyready/ihlp/compare/v0.1.6...HEAD
+[Unreleased]: https://github.com/troyready/ihlp/compare/v0.1.7...HEAD
+[0.1.7]: https://github.com/troyready/ihlp/compare/v0.1.6...v0.1.7
 [0.1.6]: https://github.com/troyready/ihlp/compare/v0.1.5...v0.1.6
 [0.1.5]: https://github.com/troyready/ihlp/compare/v0.1.4...v0.1.5
 [0.1.4]: https://github.com/troyready/ihlp/compare/v0.1.3...v0.1.4
