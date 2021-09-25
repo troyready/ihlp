@@ -65,6 +65,10 @@ async function tfShell(options: CommandOptions, command: Command) {
 program
   .command("tf-shell")
   .description("starts a subshell with Terraform configured for a block")
+  .option(
+    "-e, --environment <environment-name>",
+    ' (same as "IHLP_ENV" environment variable)',
+  )
   .action(tfShell);
 
 program.parse(process.argv);
