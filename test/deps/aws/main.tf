@@ -71,6 +71,41 @@ data "aws_iam_policy_document" "assume_role_policy" {
 data "aws_iam_policy_document" "policy" {
   statement {
     actions = [
+      "cloudformation:CreateChangeSet",
+      "cloudformation:DeleteChangeSet",
+      "cloudformation:DeleteStack",
+      "cloudformation:DescribeChangeSet",
+      "cloudformation:DescribeStacks",
+      "cloudformation:ExecuteChangeSet",
+      "cloudformation:TagResource",
+      "cloudformation:UntagResource",
+    ]
+
+    resources = [
+      "arn:${data.aws_partition.current.partition}:cloudformation:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:stack/${var.resource_prefix}*",
+    ]
+  }
+
+  statement {
+    actions = [
+      "dynamodb:CreateTable",
+      "dynamodb:DeleteItem",
+      "dynamodb:DeleteTable",
+      "dynamodb:DescribeTable",
+      "dynamodb:GetItem",
+      "dynamodb:PutItem",
+      "dynamodb:TagResource",
+      "dynamodb:UntagResource",
+      "dynamodb:UpdateTable",
+    ]
+
+    resources = [
+      "arn:${data.aws_partition.current.partition}:dynamodb:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:table/${var.resource_prefix}*",
+    ]
+  }
+
+  statement {
+    actions = [
       "iam:AttachRolePolicy",
       "iam:CreateRole",
       "iam:DetachRolePolicy",
@@ -109,41 +144,6 @@ data "aws_iam_policy_document" "policy" {
 
     resources = [
       "arn:${data.aws_partition.current.partition}:iam::${data.aws_caller_identity.current.account_id}:role/${var.resource_prefix}*",
-    ]
-  }
-
-  statement {
-    actions = [
-      "cloudformation:CreateChangeSet",
-      "cloudformation:DeleteChangeSet",
-      "cloudformation:DeleteStack",
-      "cloudformation:DescribeChangeSet",
-      "cloudformation:DescribeStacks",
-      "cloudformation:ExecuteChangeSet",
-      "cloudformation:TagResource",
-      "cloudformation:UntagResource",
-    ]
-
-    resources = [
-      "arn:${data.aws_partition.current.partition}:cloudformation:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:stack/${var.resource_prefix}*",
-    ]
-  }
-
-  statement {
-    actions = [
-      "dynamodb:CreateTable",
-      "dynamodb:DeleteItem",
-      "dynamodb:DeleteTable",
-      "dynamodb:DescribeTable",
-      "dynamodb:GetItem",
-      "dynamodb:PutItem",
-      "dynamodb:TagResource",
-      "dynamodb:UntagResource",
-      "dynamodb:UpdateTable",
-    ]
-
-    resources = [
-      "arn:${data.aws_partition.current.partition}:dynamodb:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:table/${var.resource_prefix}*",
     ]
   }
 
