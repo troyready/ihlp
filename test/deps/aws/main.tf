@@ -54,7 +54,7 @@ data "aws_iam_policy_document" "assume_role_policy" {
 
     condition {
       test     = "StringLike"
-      variable = "vstoken.actions.githubusercontent.com:sub"
+      variable = "token.actions.githubusercontent.com:sub"
 
       values = [
         "repo:${var.repo_name}:*",
@@ -62,7 +62,7 @@ data "aws_iam_policy_document" "assume_role_policy" {
     }
 
     principals {
-      identifiers = ["arn:${data.aws_partition.current.partition}:iam::${data.aws_caller_identity.current.account_id}:oidc-provider/vstoken.actions.githubusercontent.com"]
+      identifiers = ["arn:${data.aws_partition.current.partition}:iam::${data.aws_caller_identity.current.account_id}:oidc-provider/token.actions.githubusercontent.com"]
       type        = "Federated"
     }
   }
