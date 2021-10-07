@@ -8,6 +8,7 @@ import * as admzip from "adm-zip";
 import * as fs from "fs";
 import * as path from "path";
 import * as tmp from "tmp-promise";
+import { generateGitIgnore } from "../";
 import { httpsGetToFile, logGreen, pathExists } from "../../util";
 
 export async function awsServerlessFramework(): Promise<void> {
@@ -31,6 +32,8 @@ const ihlpConfig: IHLPConfig = {
     
 module.exports = ihlpConfig;
 `;
+
+  await generateGitIgnore();
 
   if (await pathExists("ihlp.ts")) {
     logGreen(

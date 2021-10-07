@@ -7,6 +7,7 @@
 import * as fs from "fs";
 import * as path from "path";
 import { v4 as uuidv4 } from "uuid";
+import { generateGitIgnore } from "../";
 import { logGreen, pathExists } from "../../util";
 
 export async function azureTfWithArmBackend(): Promise<void> {
@@ -239,6 +240,8 @@ resource "azurerm_resource_group" "example" {
   tags     = var.tags
 }
 `;
+
+  await generateGitIgnore();
 
   if (await pathExists("ihlp.ts")) {
     logGreen(
