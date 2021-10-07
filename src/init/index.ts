@@ -6,6 +6,7 @@
 import { spawnSync } from "child_process";
 import * as promptSync from "prompt-sync";
 
+import * as fs from "fs";
 import { awsServerlessFramework } from "./aws_serverless_framework";
 import { awsTfWithS3Backend } from "./aws_tf_s3_backend";
 import { azureTfWithArmBackend } from "./azure_tf_azurerm_backend";
@@ -18,6 +19,18 @@ import {
 } from "../util";
 
 const prompt = promptSync();
+
+export async function generateGitIgnore(): Promise<void> {
+  const gitIgnoreContents = "node_modules\n";
+
+  if (await pathExists(".gitignore")) {
+    logGreen(".gitignore file already exists; would have written this to it:");
+    console.log(gitIgnoreContents);
+  } else {
+    logGreen("Writing barebones .gitignore...");
+    await fs.promises.writeFile(".gitignore", gitIgnoreContents);
+  }
+}
 
 /** Ensure IHLP is installed in package.json */
 async function installIhlp() {

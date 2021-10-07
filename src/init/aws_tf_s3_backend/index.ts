@@ -6,6 +6,7 @@
 
 import * as fs from "fs";
 import * as path from "path";
+import { generateGitIgnore } from "../";
 import { logGreen, pathExists } from "../../util";
 
 export async function awsTfWithS3Backend(): Promise<void> {
@@ -190,6 +191,8 @@ resource "aws_ssm_parameter" "example" {
   value = "example"
 }
 `;
+
+  await generateGitIgnore();
 
   if (await pathExists("ihlp.ts")) {
     logGreen(
