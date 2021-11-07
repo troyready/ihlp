@@ -27,9 +27,10 @@ import { processBlockVariables } from "./variables";
 const prompt = promptSync();
 
 export interface ihlpOpts extends CommandOptions {
-  environment: string | undefined;
-  verbose: boolean;
   autoApprove: boolean;
+  environment: string | undefined;
+  upgrade: boolean;
+  verbose: boolean;
 }
 
 interface SelectedTFBlockRes {

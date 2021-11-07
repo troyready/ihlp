@@ -69,6 +69,10 @@ program
     "-e, --environment <environment-name>",
     ' (same as "IHLP_ENV" environment variable)',
   )
+  .option(
+    "--upgrade",
+    'add "-upgrade" option to terraform init (to update providers)',
+  )
   .action(tfShell);
 
 program.parse(process.argv);
