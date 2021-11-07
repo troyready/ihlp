@@ -156,20 +156,24 @@ export class Terraform extends Runner {
     envVars: NodeJS.ProcessEnv,
     backendConfig: Record<string, string> | undefined,
   ): Promise<void> {
-    const backendSubcommands: string[] = [];
+    const supplementalArgs: string[] = [];
     if (backendConfig) {
       for (const key of Object.keys(backendConfig)) {
-        backendSubcommands.push(`-backend-config=${key}=${backendConfig[key]}`);
+        supplementalArgs.push(`-backend-config=${key}=${backendConfig[key]}`);
       }
     }
 
     if (this.options.autoApprove) {
-      backendSubcommands.push("-input=false");
+      supplementalArgs.push("-input=false");
+    }
+
+    if (this.options.upgrade) {
+      supplementalArgs.push("-upgrade");
     }
 
     const exitCode = spawnSync(
       tfBin,
-      ["init", "-reconfigure"].concat(backendSubcommands),
+      ["init", "-reconfigure"].concat(supplementalArgs),
       { env: envVars, stdio: "inherit" },
     ).status;
     if (exitCode != 0) {
