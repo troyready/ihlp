@@ -29,6 +29,10 @@ program
     "-e, --environment <environment-name>",
     ' (same as "IHLP_ENV" environment variable)',
   )
+  .option(
+    "--upgrade",
+    'add "-upgrade" option to terraform init (to update providers)',
+  )
   .action(deploy);
 
 /** CLI destroy command function */
