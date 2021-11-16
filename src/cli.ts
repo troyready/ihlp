@@ -30,6 +30,10 @@ program
     ' (same as "IHLP_ENV" environment variable)',
   )
   .option(
+    "-t, --target [target...]",
+    "specify name(s) of blocks to target (others are excluded)",
+  )
+  .option(
     "--upgrade",
     'add "-upgrade" option to terraform init (to update providers)',
   )
@@ -52,6 +56,10 @@ program
     "-e, --environment <environment-name>",
     ' (same as "IHLP_ENV" environment variable)',
   )
+  .option(
+    "-t, --target [target...]",
+    "specify name(s) of blocks to target (others are excluded)",
+  )
   .action(destroy);
 
 /** CLI init command function */
@@ -72,6 +80,10 @@ program
   .option(
     "-e, --environment <environment-name>",
     ' (same as "IHLP_ENV" environment variable)',
+  )
+  .option(
+    "-t, --target [target...]",
+    "specify name(s) of blocks to target (others are excluded)",
   )
   .option(
     "--upgrade",
