@@ -211,7 +211,7 @@ export class Terraform extends Runner {
 
       if (this.block.options.targets) {
         for (const target of this.block.options.targets) {
-          tfArguments.push(`-target="${target}"`);
+          tfArguments.push(`-target=${target}`);
         }
       }
 
