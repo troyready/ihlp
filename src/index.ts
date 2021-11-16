@@ -29,6 +29,7 @@ const prompt = promptSync();
 export interface ihlpOpts extends CommandOptions {
   autoApprove: boolean;
   environment: string | undefined;
+  target: string[] | undefined;
   upgrade: boolean;
   verbose: boolean;
 }
@@ -154,7 +155,11 @@ class IHLP {
     for (const deployment of config.deployments) {
       for (const location of deployment.locations) {
         for (const block of deployment.blocks) {
-          if (block.type == "terraform") {
+          if (
+            block.type == "terraform" &&
+            (!this.options.target ||
+              (block.name && this.options.target.includes(block.name)))
+          ) {
             tfBlocks.push({ location: location, block: block });
           }
         }
@@ -230,6 +235,28 @@ class IHLP {
     }
   }
 
+  /** Determine if block should be skipped while processing location */
+  shouldBlockBeSkipped(block: Block, action: ActionName): boolean {
+    if (
+      this.options.target &&
+      (!block.name || this.options.target.includes(block.name))
+    ) {
+      return true;
+    }
+
+    if (
+      action != "destroy" &&
+      [
+        "aws-empty-s3-buckets-on-destroy",
+        "azure-delete-resource-groups-on-destroy",
+      ].includes(block.type)
+    ) {
+      return true;
+    }
+
+    return false;
+  }
+
   /** Process IHLP config deployment location */
   async processLocation(
     location: string,
@@ -239,13 +266,7 @@ class IHLP {
     process.env["IHLP_LOCATION"] = location;
 
     for (const block of action == "destroy" ? blocks.reverse() : blocks) {
-      if (
-        action == "destroy" ||
-        ![
-          "aws-empty-s3-buckets-on-destroy",
-          "azure-delete-resource-groups-on-destroy",
-        ].includes(block.type)
-      ) {
+      if (!this.shouldBlockBeSkipped(block, action)) {
         await this.processBlock(block, location, action);
       }
     }

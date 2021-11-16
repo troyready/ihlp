@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
+- `--target` option to `deploy/destroy/tf-shell` to specify block names to target
+- `target` option in Terraform blocks to specify `--target=` option during terraform operations
 - `--upgrade` option to `deploy` to use the upgrade option of `tf init`
 
 ## [0.2.0] - 2021-11-07

@@ -204,16 +204,21 @@ export class Terraform extends Runner {
       console.log();
       logGreen("Running terraform " + tfCommand);
       console.log();
-      exitCode = spawnSync(
-        terraformBinary,
-        this.options.autoApprove
-          ? [tfCommand, "-input=false", "-auto-approve"]
-          : [tfCommand],
-        {
-          env: this.addTfVarsToEnv(this.block.options.variables),
-          stdio: "inherit",
-        },
-      ).status;
+
+      const tfArguments = this.options.autoApprove
+        ? [tfCommand, "-input=false", "-auto-approve"]
+        : [tfCommand];
+
+      if (this.block.options.targets) {
+        for (const target of this.block.options.targets) {
+          tfArguments.push(`-target="${target}"`);
+        }
+      }
+
+      exitCode = spawnSync(terraformBinary, tfArguments, {
+        env: this.addTfVarsToEnv(this.block.options.variables),
+        stdio: "inherit",
+      }).status;
       if (exitCode != 0) {
         process.exit(exitCode ? exitCode : 1);
       }

@@ -115,6 +115,8 @@ export interface TerraformBlockOpts extends BlockOpts {
   backendConfig?: Record<string, string>;
   /** Terraform init type (future Terraform Cloud support) */
   initType?: "standard"; // TBD what TF cloud support option will be ("remote"?)
+  /** List of Terraform targets to which apply/destroy will be restricted */
+  targets?: string[];
   /** Version of Terraform to use (specify here or in .terraform-version file -- omit both to use system-installed Terraform) */
   terraformVersion?: string;
   /** Terraform variables */
