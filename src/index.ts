@@ -239,7 +239,7 @@ class IHLP {
   shouldBlockBeSkipped(block: Block, action: ActionName): boolean {
     if (
       this.options.target &&
-      (!block.name || this.options.target.includes(block.name))
+      (!block.name || !this.options.target.includes(block.name))
     ) {
       return true;
     }

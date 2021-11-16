@@ -6,6 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Fixed
+- Fixed `--target` option (now skipping non-matching block correctly)
 - Fixed TF targets syntax (dropped extra quotes)
 
 ## [0.3.0] - 2021-11-15
