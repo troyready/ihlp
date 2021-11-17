@@ -9,75 +9,7 @@ import * as path from "path";
 import { generateGitIgnore } from "../";
 import { logGreen, pathExists } from "../../util";
 
-export async function awsTfWithS3Backend(): Promise<void> {
-  const configContents = `import type { IHLPConfig } from "ihlp/lib/config";
-
-const envOptions = {
-  dev: {
-    namespace: "dev-ihlp-proj",
-    tags: {
-      environment: "dev",
-      namespace: "dev-ihlp-proj",
-    },
-  },
-  prod: {
-    namespace: "prod-ihlp-proj",
-    tags: {
-      environment: "prod",
-      namespace: "prod-ihlp-proj",
-    },
-  },
-};
-
-const ihlpConfig: IHLPConfig = {
-  deployments: [
-    {
-      blocks: [
-        {
-          options: {
-            stackName: \`\${envOptions[process.env.IHLP_ENV].namespace}-tf-state\`,
-            stackTags: envOptions[process.env.IHLP_ENV].tags,
-            templatePath: "./cfn-templates/tf-state.yml"
-          },
-          type: "aws-cfn-stack",
-        },
-        {
-          options: {
-            bucketNames: \`\\\${aws-cfn-output stack=\${
-              envOptions[process.env.IHLP_ENV].namespace
-            }-tf-state,output=BucketName}\`,
-          },
-          type: "aws-empty-s3-buckets-on-destroy",
-        },
-        {
-          options: {
-            backendConfig: {
-              bucket: \`\\\${aws-cfn-output stack=\${
-                envOptions[process.env.IHLP_ENV].namespace
-              }-tf-state,output=BucketName}\`,
-              dynamodb_table: \`\\\${aws-cfn-output stack=\${
-                envOptions[process.env.IHLP_ENV].namespace
-              }-tf-state,output=TableName}\`,
-              region: "\${env IHLP_LOCATION}",
-            },
-            terraformVersion: "1.0.2", // specify here or in .terraform-version file in terraform directory
-            variables: {
-              region: "\${env IHLP_LOCATION}",
-              tags: envOptions[process.env.IHLP_ENV].tags
-            },
-          },
-          path: "example.tf",
-          type: "terraform",
-        },
-      ],
-      locations: ["us-west-2"],
-    },
-  ],
-};
-
-module.exports = ihlpConfig;
-`;
-
+export async function writeS3BackendCfnTemplate(): Promise<void> {
   const cfnTemplateContents = `---
 AWSTemplateFormatVersion: '2010-09-09'
 Conditions:
@@ -156,6 +88,91 @@ Resources:
     Type: AWS::DynamoDB::Table
 `;
 
+  const cfnTemplatePath = path.join("cfn-templates", "tf-state.yml");
+  if (await pathExists(cfnTemplatePath)) {
+    logGreen(
+      "CFN template file already exists; would have written this to it:",
+    );
+    console.log(cfnTemplateContents);
+    console.log();
+  } else {
+    if (!(await pathExists("cfn-templates"))) {
+      await fs.promises.mkdir("cfn-templates");
+    }
+    logGreen(`Writing ${cfnTemplatePath}...`);
+    await fs.promises.writeFile(cfnTemplatePath, cfnTemplateContents);
+  }
+}
+
+export async function awsTfWithS3Backend(): Promise<void> {
+  const configContents = `import type { IHLPConfig } from "ihlp/lib/config";
+
+const envOptions = {
+  dev: {
+    namespace: "dev-ihlp-proj",
+    tags: {
+      environment: "dev",
+      namespace: "dev-ihlp-proj",
+    },
+  },
+  prod: {
+    namespace: "prod-ihlp-proj",
+    tags: {
+      environment: "prod",
+      namespace: "prod-ihlp-proj",
+    },
+  },
+};
+
+const ihlpConfig: IHLPConfig = {
+  deployments: [
+    {
+      blocks: [
+        {
+          options: {
+            stackName: \`\${envOptions[process.env.IHLP_ENV].namespace}-tf-state\`,
+            stackTags: envOptions[process.env.IHLP_ENV].tags,
+            templatePath: "./cfn-templates/tf-state.yml"
+          },
+          type: "aws-cfn-stack",
+        },
+        {
+          options: {
+            bucketNames: \`\\\${aws-cfn-output stack=\${
+              envOptions[process.env.IHLP_ENV].namespace
+            }-tf-state,output=BucketName}\`,
+          },
+          type: "aws-empty-s3-buckets-on-destroy",
+        },
+        {
+          options: {
+            backendConfig: {
+              bucket: \`\\\${aws-cfn-output stack=\${
+                envOptions[process.env.IHLP_ENV].namespace
+              }-tf-state,output=BucketName}\`,
+              dynamodb_table: \`\\\${aws-cfn-output stack=\${
+                envOptions[process.env.IHLP_ENV].namespace
+              }-tf-state,output=TableName}\`,
+              region: "\${env IHLP_LOCATION}",
+            },
+            terraformVersion: "1.0.2", // specify here or in .terraform-version file in terraform directory
+            variables: {
+              region: "\${env IHLP_LOCATION}",
+              tags: envOptions[process.env.IHLP_ENV].tags
+            },
+          },
+          path: "example.tf",
+          type: "terraform",
+        },
+      ],
+      locations: ["us-west-2"],
+    },
+  ],
+};
+
+module.exports = ihlpConfig;
+`;
+
   const tfGitIgnore = `.terraform
 `;
 
@@ -204,20 +221,7 @@ resource "aws_ssm_parameter" "example" {
     await fs.promises.writeFile("ihlp.ts", configContents);
   }
 
-  const cfnTemplatePath = path.join("cfn-templates", "tf-state.yml");
-  if (await pathExists(cfnTemplatePath)) {
-    logGreen(
-      "CFN template file already exists; would have written this to it:",
-    );
-    console.log(cfnTemplateContents);
-    console.log();
-  } else {
-    if (!(await pathExists("cfn-templates"))) {
-      await fs.promises.mkdir("cfn-templates");
-    }
-    logGreen(`Writing ${cfnTemplatePath}...`);
-    await fs.promises.writeFile(cfnTemplatePath, cfnTemplateContents);
-  }
+  await writeS3BackendCfnTemplate();
 
   const tfGitIgnorePath = path.join("example.tf", ".gitignore");
   if (await pathExists(tfGitIgnorePath)) {
