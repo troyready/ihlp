@@ -21,6 +21,7 @@ import {
   AzureArmDeployment,
   AzureDeleteResourceGroupsOnDestroy,
 } from "./runners/azure";
+import { GCPEmptyBucketsOnDestroy, GCPDeployment } from "./runners/gcp";
 import { EsbuildFunctions } from "./runners/esbuild";
 import { Serverless } from "./runners/serverless";
 import { SyncToRemoteStorage } from "./runners/synctoremotestorage";
@@ -74,6 +75,12 @@ export function getBlockRunner(
     }
     case "esbuild-functions": {
       return new EsbuildFunctions(block, location, options);
+    }
+    case "gcp-empty-buckets-on-destroy": {
+      return new GCPEmptyBucketsOnDestroy(block, location, options);
+    }
+    case "gcp-deployment": {
+      return new GCPDeployment(block, location, options);
     }
     case "serverless-framework": {
       return new Serverless(block, location, options);
@@ -304,6 +311,23 @@ export async function pathExists(filepath: string): Promise<boolean> {
     }
   }
   return true;
+}
+
+/** Sort function for arrays of objects */
+export function sortArrayByObjectKey(
+  key: string,
+): (a: Record<string, any>, b: Record<string, any>) => 1 | -1 | 0 {
+  return (a: Record<string, any>, b: Record<string, any>) => {
+    if (a[key] < b[key]) {
+      return -1;
+    }
+    if (a[key] > b[key]) {
+      return 1;
+    }
+
+    // names must be equal
+    return 0;
+  };
 }
 
 /** Zip directory (contents have timestamps zeroed out for idempotent builds) */

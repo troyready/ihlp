@@ -14,6 +14,7 @@ import {
   GetParameterCommand,
   GetParameterCommandInput,
 } from "@aws-sdk/client-ssm";
+import { GoogleAuth } from "google-auth-library";
 
 import { logErrorRed, logGreen } from "./util";
 
@@ -83,122 +84,139 @@ async function resolveVar(
   verboseLogging = false,
 ): Promise<string> {
   switch (varType) {
-    case "aws-cfn-output": {
-      const opts = {};
-      const cfnClientOpts = {};
+    case "aws-cfn-output":
+      {
+        const opts = {};
+        const cfnClientOpts = {};
 
-      for (const opt of varArg.split(",")) {
-        if (opt.startsWith("stack=")) {
-          opts["stackName"] = opt.split("stack=")[1];
-        } else if (opt.startsWith("output=")) {
-          opts["outputName"] = opt.split("output=")[1];
-        } else if (opt.startsWith("region=")) {
-          cfnClientOpts["region"] = opt.split("region=")[1];
+        for (const opt of varArg.split(",")) {
+          if (opt.startsWith("stack=")) {
+            opts["stackName"] = opt.split("stack=")[1];
+          } else if (opt.startsWith("output=")) {
+            opts["outputName"] = opt.split("output=")[1];
+          } else if (opt.startsWith("region=")) {
+            cfnClientOpts["region"] = opt.split("region=")[1];
+          }
         }
-      }
 
-      if (!("region" in cfnClientOpts)) {
-        cfnClientOpts["region"] = process.env["IHLP_LOCATION"];
-      }
+        if (!("region" in cfnClientOpts)) {
+          cfnClientOpts["region"] = process.env["IHLP_LOCATION"];
+        }
 
-      try {
-        const DescribeStacksResponse = await new CloudFormationClient(
-          cfnClientOpts,
-        ).send(new DescribeStacksCommand({ StackName: opts["stackName"] }));
+        try {
+          const DescribeStacksResponse = await new CloudFormationClient(
+            cfnClientOpts,
+          ).send(new DescribeStacksCommand({ StackName: opts["stackName"] }));
 
-        if (
-          "Stacks" in DescribeStacksResponse &&
-          DescribeStacksResponse.Stacks?.length == 1
-        ) {
-          if ("Outputs" in DescribeStacksResponse.Stacks[0]) {
-            const matchingOutput =
-              DescribeStacksResponse.Stacks[0].Outputs?.find(
-                (element) => element.OutputKey == opts["outputName"],
-              );
-            if (matchingOutput?.OutputValue) {
-              return matchingOutput.OutputValue;
+          if (
+            "Stacks" in DescribeStacksResponse &&
+            DescribeStacksResponse.Stacks?.length == 1
+          ) {
+            if ("Outputs" in DescribeStacksResponse.Stacks[0]) {
+              const matchingOutput =
+                DescribeStacksResponse.Stacks[0].Outputs?.find(
+                  (element) => element.OutputKey == opts["outputName"],
+                );
+              if (matchingOutput?.OutputValue) {
+                return matchingOutput.OutputValue;
+              } else {
+                logErrorRed(
+                  `Stack ${opts["stackName"]} does not have output ${opts["outputName"]}`,
+                );
+                process.exit(1);
+              }
             } else {
-              logErrorRed(
-                `Stack ${opts["stackName"]} does not have output ${opts["outputName"]}`,
-              );
+              logErrorRed(`No outputs in stack ${opts["stackName"]}`);
               process.exit(1);
             }
-          } else {
-            logErrorRed(`No outputs in stack ${opts["stackName"]}`);
-            process.exit(1);
           }
-        }
-      } catch (err) {
-        if (err.name == "CredentialsProviderError") {
-          logErrorRed(
-            "Credentials error occured when accessing AWS - please check credentials and try again",
-          );
-          process.exit(1);
-        } else {
-          throw err;
-        }
-      }
-      logErrorRed(`Stack ${opts["stackName"]} not found`);
-      process.exit(1);
-    }
-    // eslint-disable-next-line no-fallthrough
-    case "aws-ssm-param": {
-      const opts = {};
-      const ssmClientOpts: SSMClientConfig = {};
-
-      for (const opt of varArg.split(",")) {
-        if (opt.startsWith("name=")) {
-          opts["Name"] = opt.split("name=")[1];
-        } else if (opt.startsWith("region=")) {
-          ssmClientOpts["region"] = opt.split("region=")[1];
-        }
-      }
-
-      if (!("region" in ssmClientOpts)) {
-        ssmClientOpts["region"] = process.env["IHLP_LOCATION"];
-      }
-
-      try {
-        if (verboseLogging) {
-          logGreen(`Retreiving SSM parameter ${opts["Name"]}`);
-        }
-        const getParameterCommandResponse = await new SSMClient(
-          ssmClientOpts,
-        ).send(new GetParameterCommand(opts as GetParameterCommandInput));
-        if (getParameterCommandResponse.Parameter?.Value) {
-          if (verboseLogging) {
-            logGreen(
-              `SSM parameter ${opts["Name"]} value is ${getParameterCommandResponse.Parameter.Value}`,
+        } catch (err) {
+          if (err.name == "CredentialsProviderError") {
+            logErrorRed(
+              "Credentials error occured when accessing AWS - please check credentials and try again",
             );
+            process.exit(1);
+          } else {
+            throw err;
           }
-          return getParameterCommandResponse.Parameter.Value;
-        } else {
-          logErrorRed(
-            `Unable to determine SSM parameter ${opts["Name"]} value`,
-          );
-          process.exit(1);
         }
-      } catch (err) {
-        if (err.name == "ParameterNotFound") {
-          logErrorRed("Error - requested variable SSM parameter not found");
-          process.exit(1);
-        } else if (err.name == "CredentialsProviderError") {
-          logErrorRed(
-            "Credentials error occured when accessing AWS - please check credentials and try again",
-          );
-          process.exit(1);
-        } else {
-          throw err;
-        }
-      }
-    }
-    // eslint-disable-next-line no-fallthrough
-    case "env": {
-      if (!(varArg in process.env)) {
-        logErrorRed(`Environment variables do not contain "${varArg}"`);
+        logErrorRed(`Stack ${opts["stackName"]} not found`);
         process.exit(1);
       }
-      return process.env[varArg] as string;
+      break;
+    case "aws-ssm-param":
+      {
+        const opts = {};
+        const ssmClientOpts: SSMClientConfig = {};
+
+        for (const opt of varArg.split(",")) {
+          if (opt.startsWith("name=")) {
+            opts["Name"] = opt.split("name=")[1];
+          } else if (opt.startsWith("region=")) {
+            ssmClientOpts["region"] = opt.split("region=")[1];
+          }
+        }
+
+        if (!("region" in ssmClientOpts)) {
+          ssmClientOpts["region"] = process.env["IHLP_LOCATION"];
+        }
+
+        try {
+          if (verboseLogging) {
+            logGreen(`Retreiving SSM parameter ${opts["Name"]}`);
+          }
+          const getParameterCommandResponse = await new SSMClient(
+            ssmClientOpts,
+          ).send(new GetParameterCommand(opts as GetParameterCommandInput));
+          if (getParameterCommandResponse.Parameter?.Value) {
+            if (verboseLogging) {
+              logGreen(
+                `SSM parameter ${opts["Name"]} value is ${getParameterCommandResponse.Parameter.Value}`,
+              );
+            }
+            return getParameterCommandResponse.Parameter.Value;
+          } else {
+            logErrorRed(
+              `Unable to determine SSM parameter ${opts["Name"]} value`,
+            );
+            process.exit(1);
+          }
+        } catch (err) {
+          if (err.name == "ParameterNotFound") {
+            logErrorRed("Error - requested variable SSM parameter not found");
+            process.exit(1);
+          } else if (err.name == "CredentialsProviderError") {
+            logErrorRed(
+              "Credentials error occured when accessing AWS - please check credentials and try again",
+            );
+            process.exit(1);
+          } else {
+            throw err;
+          }
+        }
+      }
+      break;
+    case "env":
+      {
+        if (!(varArg in process.env)) {
+          logErrorRed(`Environment variables do not contain "${varArg}"`);
+          process.exit(1);
+        }
+        return process.env[varArg] as string;
+      }
+      break;
+    case "gcp-metadata": {
+      if (varArg == "project") {
+        const auth = new GoogleAuth({
+          scopes: "https://www.googleapis.com/auth/cloud-platform",
+        });
+        return await auth.getProjectId();
+      } else {
+        logErrorRed(
+          `gcp-metadata config variable currently only supports "project" argument`,
+        );
+        process.exit(1);
+      }
     }
   }
   logErrorRed(`Invalid var type "${varType}" specified`);

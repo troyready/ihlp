@@ -11,6 +11,7 @@ import { awsServerlessFramework } from "./aws_serverless_framework";
 import { awsTfEksFluxV2 } from "./aws_tf_eks_fluxv2";
 import { awsTfWithS3Backend } from "./aws_tf_s3_backend";
 import { azureTfWithArmBackend } from "./azure_tf_azurerm_backend";
+import { gcpTfWithGCSBackend } from "./gcp_tf_gcs_backend";
 import { bareBones } from "./barebones";
 import {
   generateValidChoiceSelections,
@@ -49,8 +50,11 @@ async function installIhlp() {
       }
     }
     logGreen("Checking for @types/node listed in package.json");
-    exitCode = spawnSync("npm", ["ls", "@types/node"]).status;
-    if (exitCode != 0) {
+    if (
+      !(await fs.promises.readFile("package.json", "utf-8")).includes(
+        '"@types/node"',
+      )
+    ) {
       logGreen(
         "@types/nodes not present; adding it to package.json devDependencies",
       );
@@ -109,6 +113,10 @@ export async function init(): Promise<void> {
     {
       name: "(Azure) Terraform with ARM backend",
       worker: azureTfWithArmBackend,
+    },
+    {
+      name: "(GCP) Terraform with GCS backend",
+      worker: gcpTfWithGCSBackend,
     },
   ];
 

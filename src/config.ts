@@ -16,6 +16,8 @@ interface BlockOpts {} // eslint-disable-line @typescript-eslint/no-empty-interf
 
 /** Block definition */
 export interface Block {
+  /** Optional override of environment variables for the block */
+  envVars?: Record<string, string>;
   /** Optional display name for the block */
   name?: string;
   /** Configuration options */
@@ -54,6 +56,52 @@ export interface ArmDeploymentBlock extends Block {
   name?: string;
   options: ArmDeploymentBlockOpts;
   type: "azure-arm-deployment";
+}
+
+/** File to import for deployment configuration */
+export interface GcpDeploymentImport {
+  content: string;
+  name: string;
+}
+
+/** Block options for a GCP Deployment Manager deployment */
+export interface GcpDeploymentBlockOpts extends BlockOpts {
+  /** Deploy template contents */
+  config: string;
+  /** Creation policy (defaults to CREATE_OR_ACQUIRE) */
+  createPolicy?: "ACQUIRE" | "CREATE_OR_ACQUIRE";
+  /** Deletion policy (defaults to DELETE) */
+  deletePolicy?: "ABANDON" | "DELETE";
+  /** Description of GCP Deployment Manager deployment */
+  description?: string;
+  /** Deployment imports */
+  imports?: GcpDeploymentImport[];
+  /** Name of GCP Deployment Manager deployment */
+  name: string;
+  /** Labels for the deployment */
+  labels?: Record<string, string>;
+  /** Project in which the deployment will be created */
+  projectId?: string;
+}
+
+/** Block definition for a GCP Deployment Manager deployment */
+export interface GcpDeploymentBlock extends Block {
+  name?: string;
+  options: GcpDeploymentBlockOpts;
+  type: "gcp-deployment";
+}
+
+/** Block options for emptying GCP buckets on destroy */
+export interface EmptyGCPBucketsOnDestroyOpts {
+  /** Buckets(s) - commma-separated or regular list */
+  bucketNames: string[] | string;
+}
+
+/** Block definition for emptying GCP buckets on destroy */
+export interface EmptyGCPBucketsOnDestroyBlock extends Block {
+  name?: string;
+  options: EmptyGCPBucketsOnDestroyOpts;
+  type: "gcp-empty-buckets-on-destroy";
 }
 
 /** Block options for deleting Azure Resource Group on destroy */
@@ -269,8 +317,10 @@ export interface Deployment {
     | CfnStackBlock
     | CommandBlock
     | DeleteResourceGroupOnDestroyBlock
+    | EmptyGCPBucketsOnDestroyBlock
     | EmptyS3BucketsOnDestroyBlock
     | EsbuildFunctionsBlock
+    | GcpDeploymentBlock
     | ServerlessBlock
     | SyncToRemoteStorageBlock
     | TerraformBlock
