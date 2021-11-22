@@ -244,13 +244,7 @@ class IHLP {
       return true;
     }
 
-    if (
-      action != "destroy" &&
-      [
-        "aws-empty-s3-buckets-on-destroy",
-        "azure-delete-resource-groups-on-destroy",
-      ].includes(block.type)
-    ) {
+    if (action != "destroy" && block.type.endsWith("-on-destroy")) {
       return true;
     }
 
@@ -330,6 +324,11 @@ class IHLP {
     action: ActionName,
   ): Promise<void> {
     const origEnv = process.env;
+    if (block.envVars) {
+      for (const [k, v] of Object.entries(block.envVars)) {
+        process.env[k] = v;
+      }
+    }
     try {
       const runner = getBlockRunner(
         block,
