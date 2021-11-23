@@ -1,0 +1,27 @@
+{
+  "name": "azure_tf",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "lint": "prettier -c *.ts",
+    "lintfix": "prettier -w *.ts",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "ihlp": "file:../../",
+    "nunjucks": "^3.2.3",
+    "ts-node": "^10.2.1"
+  },
+  "devDependencies": {
+    "@types/node": "^15.14.9",
+    "@types/nunjucks": "^3.2.0",
+    "prettier": "^2.2.1"
+  },
+  "prettier": {
+    "trailingComma": "all"
+  }
+}

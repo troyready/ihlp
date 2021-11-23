@@ -7,6 +7,15 @@ inputs:
   env_suffix:
     description: 'Environment suffix'
     required: true
+  google_project:
+    description: Google Project ID for testing
+    required: true
+  google_service_account:
+    description: Google service account for federated authentication
+    required: true
+  google_workload_identity_provider:
+    description: Google identity provider for federated authentication
+    required: true
 runs:
   using: "composite"
   steps:
@@ -18,6 +27,18 @@ runs:
           echo AWS_WEB_IDENTITY_TOKEN_FILE=$AWS_WEB_IDENTITY_TOKEN_FILE >> $GITHUB_ENV
           curl -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" "$ACTIONS_ID_TOKEN_REQUEST_URL" | jq -r '.value' > $AWS_WEB_IDENTITY_TOKEN_FILE
       shell: bash
+
+    # https://github.com/google-github-actions/auth#configuring-gcloud
+    - uses: 'google-github-actions/setup-gcloud@master'
+      with:
+        project_id: ${{ inputs.google_project }}
+    - id: 'gcpauth'
+      name: 'Authenticate to Google Cloud'
+      uses: 'google-github-actions/auth@v0.4.0'
+      with:
+        workload_identity_provider: ${{ inputs.google_workload_identity_provider }}
+        service_account: ${{ inputs.google_service_account }}
+
     - run: echo "Installing node modules"
       shell: bash
     - name: Install modules
