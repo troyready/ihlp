@@ -1,0 +1,12 @@
+resources:
+  - name: "{{ properties['bucketName'] }}"
+    type: storage.v1.bucket
+    properties:
+      lifecycle:
+        rule:
+          - action:
+              type: Delete
+            condition:
+              daysSinceNoncurrentTime: 21
+      versioning:
+        enabled: true

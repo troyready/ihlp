@@ -5,7 +5,8 @@
  */
 
 import * as fs from "fs";
-import { azureTfTests } from "./azure_tf";
+import { azureTfTests } from "./azure_tf/index";
+import { gcpTfTests } from "./gcp_tf/index";
 import { esbuildFunctionsTest } from "./esbuildfunctions/index";
 
 /** Return true if provided path exists */
@@ -24,6 +25,7 @@ export async function pathExists(filepath: string): Promise<boolean> {
 
 /** Run tests */
 export async function test(): Promise<void> {
+  await gcpTfTests();
   await azureTfTests();
   await esbuildFunctionsTest();
 }

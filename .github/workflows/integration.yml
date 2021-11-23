@@ -27,6 +27,9 @@ jobs:
       with:
         boundary_policy: ${{ secrets.AWS_PERMISSIONS_BOUNDARY_ARN }}
         env_suffix: ${{ github.event.pull_request.number }}
+        google_project: ${{ secrets.GCP_PROJECT_ID }}
+        google_service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+        google_workload_identity_provider:  ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
 
   # Repo owner has commented /ok-to-test on a (fork-based) pull request
   integration-fork:
@@ -56,6 +59,9 @@ jobs:
       with:
         boundary_policy: ${{ secrets.AWS_PERMISSIONS_BOUNDARY_ARN }}
         env_suffix: ${{ github.event.client_payload.pull_request.number }}
+        google_project: ${{ secrets.GCP_PROJECT_ID }}
+        google_service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+        google_workload_identity_provider:  ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
 
     # Update check run called "integration-fork"
     - uses: actions/github-script@v1
