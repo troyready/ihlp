@@ -34,6 +34,18 @@ export async function generateGitIgnore(): Promise<void> {
   }
 }
 
+/** Ensure a tsconfig file is present
+ *
+ * This works around IDE issues where entries in a subdirectory's
+ * package.json aren't detected, e.g. '@types/node'
+ */
+export async function generateTsconfig(): Promise<void> {
+  if (!(await pathExists("tsconfig.json"))) {
+    logGreen("Writing barebones tsconfig.json...");
+    await fs.promises.writeFile("tsconfig.json", "{}\n");
+  }
+}
+
 /** Ensure IHLP is installed in package.json */
 async function installIhlp() {
   let exitCode: number | null;
