@@ -6,7 +6,7 @@
 
 import * as fs from "fs";
 import * as path from "path";
-import { generateGitIgnore } from "../";
+import { generateGitIgnore, generateTsconfig } from "../";
 import { logGreen, pathExists } from "../../util";
 
 export async function writeS3BackendCfnTemplate(): Promise<void> {
@@ -210,6 +210,7 @@ resource "aws_ssm_parameter" "example" {
 `;
 
   await generateGitIgnore();
+  await generateTsconfig();
 
   if (await pathExists("ihlp.ts")) {
     logGreen(

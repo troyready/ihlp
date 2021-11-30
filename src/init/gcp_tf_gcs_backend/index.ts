@@ -8,7 +8,7 @@ import { spawnSync } from "child_process";
 import * as fs from "fs";
 import * as path from "path";
 import { v4 as uuidv4 } from "uuid";
-import { generateGitIgnore } from "../";
+import { generateGitIgnore, generateTsconfig } from "../";
 import { logGreen, pathExists } from "../../util";
 
 export async function writeGCSBackendTemplate(): Promise<void> {
@@ -165,6 +165,7 @@ resource "google_storage_bucket" "example" {
 `;
 
   await generateGitIgnore();
+  await generateTsconfig();
 
   if (await pathExists("ihlp.ts")) {
     logGreen(

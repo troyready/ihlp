@@ -7,7 +7,7 @@
 import * as fs from "fs";
 import * as path from "path";
 import { v4 as uuidv4 } from "uuid";
-import { generateGitIgnore } from "../";
+import { generateGitIgnore, generateTsconfig } from "../";
 import { logGreen, pathExists } from "../../util";
 
 export async function azureTfWithArmBackend(): Promise<void> {
@@ -242,6 +242,7 @@ resource "azurerm_resource_group" "example" {
 `;
 
   await generateGitIgnore();
+  await generateTsconfig();
 
   if (await pathExists("ihlp.ts")) {
     logGreen(

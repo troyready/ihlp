@@ -6,6 +6,7 @@
 
 import * as fs from "fs";
 import * as path from "path";
+import { generateTsconfig } from "../";
 import { writeS3BackendCfnTemplate } from "../aws_tf_s3_backend";
 import { logGreen, pathExists } from "../../util";
 
@@ -1001,6 +1002,8 @@ resource "local_file" "kustomize" {
     logGreen("Writing .gitignore...");
     await fs.promises.writeFile(".gitignore", gitIgnoreContents);
   }
+
+  await generateTsconfig();
 
   if (await pathExists("ihlp.ts")) {
     logGreen(

@@ -5,7 +5,7 @@
  */
 
 import * as fs from "fs";
-import { generateGitIgnore } from "../";
+import { generateGitIgnore, generateTsconfig } from "../";
 import { logGreen, pathExists } from "../../util";
 
 export async function bareBones(): Promise<void> {
@@ -25,6 +25,7 @@ module.exports = ihlpConfig;
 `;
 
   await generateGitIgnore();
+  await generateTsconfig();
 
   if (await pathExists("ihlp.ts")) {
     logGreen(
