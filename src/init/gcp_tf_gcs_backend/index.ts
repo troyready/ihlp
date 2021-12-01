@@ -116,7 +116,7 @@ const ihlpConfig: IHLPConfig = {
           type: "terraform",
         },
       ],
-      locations: ["us-west-2"],
+      locations: ["us-west1"],
     },
   ],
 };
@@ -159,7 +159,7 @@ resource "google_storage_bucket" "example" {
   force_destroy = true
   labels        = var.labels
   location      = "US"
-  name          = "example-bucket-\${random_id.bucket.hex}"
+  name          = "\${terraform.workspace}example-bucket-\${random_id.bucket.hex}"
 }
 
 `;

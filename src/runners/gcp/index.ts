@@ -31,7 +31,16 @@ export class GCPDeployment extends Runner {
     const auth = new GoogleAuth({
       scopes: "https://www.googleapis.com/auth/cloud-platform",
     });
-    const client = await auth.getClient();
+    let client: OAuth2Client;
+    // const client = await auth.getClient();
+    try {
+      client = (await auth.getClient()) as OAuth2Client;
+    } catch (err) {
+      logErrorRed("Error setting up GCP client");
+      logErrorRed("(are you logged in?)");
+      console.log(err.message);
+      process.exit(1);
+    }
     const projectId = this.block.options.projectId
       ? this.block.options.projectId
       : await auth.getProjectId();
@@ -63,7 +72,7 @@ export class GCPDeployment extends Runner {
         }
       }
       await waitForDeletionToComplete(
-        client as OAuth2Client,
+        client,
         baseUrl + "/" + this.block.options.name,
       );
     } else if (actionName == "deploy") {
@@ -96,7 +105,7 @@ export class GCPDeployment extends Runner {
 
       if (deploymentExists) {
         deploymentUpdateRequired = await this.checkForChangedDeployment(
-          client as OAuth2Client,
+          client,
           currentDeploymentData,
           deployBody,
         );
@@ -153,10 +162,7 @@ export class GCPDeployment extends Runner {
         }
         logGreen("Waiting for deployment to finish...");
         await new Promise((r) => setTimeout(r, 10000)); // sleep 10 sec
-        await waitForCreateOrUpdate(
-          client as OAuth2Client,
-          reqRes.data["targetLink"],
-        );
+        await waitForCreateOrUpdate(client, reqRes.data["targetLink"]);
       }
     }
     logGreen("GCP Deployment runner complete");
@@ -338,8 +344,13 @@ export class GCPEmptyBucketsOnDestroy extends Runner {
           if (err.code == 404) {
             logGreen("Bucket does not exist; nothing to do");
           } else {
-            logErrorRed("Error getting files in bucket:");
-            console.log(JSON.stringify(err.errors));
+            logErrorRed("Unable to get files in bucket");
+            if ("errors" in err) {
+              console.log(JSON.stringify(err.errors));
+            } else if ("message" in err) {
+              logErrorRed("(are you logged in?)");
+              console.log(err.message);
+            }
             process.exit(1);
           }
         }
