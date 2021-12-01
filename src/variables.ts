@@ -210,7 +210,14 @@ async function resolveVar(
         const auth = new GoogleAuth({
           scopes: "https://www.googleapis.com/auth/cloud-platform",
         });
-        return await auth.getProjectId();
+        try {
+          const projectId = await auth.getProjectId();
+          return projectId;
+        } catch (err) {
+          logErrorRed("Unable to get GCP project id");
+          logErrorRed("(are you logged in?)");
+          process.exit(1);
+        }
       } else {
         logErrorRed(
           `gcp-metadata config variable currently only supports "project" argument`,
