@@ -171,12 +171,14 @@ export class Terraform extends Runner {
       supplementalArgs.push("-upgrade");
     }
 
+    logGreen("Running terraform init");
     const exitCode = spawnSync(
       tfBin,
       ["init", "-reconfigure"].concat(supplementalArgs),
       { env: envVars, stdio: "inherit" },
     ).status;
     if (exitCode != 0) {
+      logErrorRed("Terraform init failed");
       process.exit(exitCode ? exitCode : 1);
     }
   }

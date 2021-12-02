@@ -128,6 +128,13 @@ async function downloadVersion(
       path.join(tmpDir.path, tfExecutable),
       path.join(versionsDir, version, tfExecutable),
     );
+    if (process.platform != "win32") {
+      // Darwin builds don't appear to have executable permission set
+      await fs.promises.chmod(
+        path.join(versionsDir, version, tfExecutable),
+        0o755,
+      );
+    }
   } finally {
     await tmpDir.cleanup();
   }

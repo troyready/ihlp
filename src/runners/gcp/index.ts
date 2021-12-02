@@ -36,8 +36,7 @@ export class GCPDeployment extends Runner {
     try {
       client = (await auth.getClient()) as OAuth2Client;
     } catch (err) {
-      logErrorRed("Error setting up GCP client");
-      logErrorRed("(are you logged in?)");
+      logErrorRed("Error setting up GCP client (are you logged in?)");
       console.log(err.message);
       process.exit(1);
     }

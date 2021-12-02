@@ -214,8 +214,7 @@ async function resolveVar(
           const projectId = await auth.getProjectId();
           return projectId;
         } catch (err) {
-          logErrorRed("Unable to get GCP project id");
-          logErrorRed("(are you logged in?)");
+          logErrorRed("Unable to get GCP project id (are you logged in?)");
           process.exit(1);
         }
       } else {
