@@ -44,8 +44,12 @@ runs:
           subscription-id: ${{ inputs.azure_subscription_id }}
           tenant-id: ${{ inputs.azure_tenant_id }}
 
-    - name: Setup upterm session
-      uses: lhotari/action-upterm@v1
+    - name: Set Terraform Azure Principal Secret
+      run: export ARM_CLIENT_SECRET=$(cat $HOME/.azure/msal_token_cache.json | jq -r .AccessToken[].secret)
+      shell: bash
+
+    # - name: Setup upterm session
+    #   uses: lhotari/action-upterm@v1
 
     # https://github.com/google-github-actions/auth#configuring-gcloud
     - uses: 'google-github-actions/setup-gcloud@master'
