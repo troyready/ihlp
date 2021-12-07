@@ -1,6 +1,15 @@
 name: Run integration tests
 description: Deploy infrastructure, test it, and destroy it
 inputs:
+  azure_client_id:
+    description: Azure AD application client ID
+    required: true
+  azure_subscription_id:
+    description: Azure subscription ID
+    required: true
+  azure_tenant_id:
+    description: Azure AD tenant ID
+    required: true
   boundary_policy:
     description: IAM managed policy to apply as permissions boundary
     required: true
@@ -27,6 +36,13 @@ runs:
           echo AWS_WEB_IDENTITY_TOKEN_FILE=$AWS_WEB_IDENTITY_TOKEN_FILE >> $GITHUB_ENV
           curl -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" "$ACTIONS_ID_TOKEN_REQUEST_URL" | jq -r '.value' > $AWS_WEB_IDENTITY_TOKEN_FILE
       shell: bash
+
+    - name: 'Az CLI login'
+      uses: azure/login@v1
+      with:
+          client-id: ${{ inputs.azure_client_id }}
+          subscription-id: ${{ inputs.azure_subscription_id }}
+          tenant-id: ${{ inputs.azure_tenant_id }}
 
     # https://github.com/google-github-actions/auth#configuring-gcloud
     - uses: 'google-github-actions/setup-gcloud@master'

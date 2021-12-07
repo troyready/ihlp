@@ -14,10 +14,10 @@ jobs:
     permissions:
       id-token: write
     env:
-      ARM_SUBSCRIPTION_ID:  ${{ secrets.ARM_SUBSCRIPTION_ID }}
-      ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
-      ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
-      ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+      # ARM_SUBSCRIPTION_ID:  ${{ secrets.ARM_SUBSCRIPTION_ID }}
+      # ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+      # ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
+      # ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
       AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
     steps:
     - name: Branch based PR checkout
@@ -25,6 +25,9 @@ jobs:
     - id: integration-test
       uses: ./.github/actions/integration_tests
       with:
+        azure_client_id: ${{ secrets.AZURE_CLIENT_ID }}
+        azure_subscription_id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+        azure_tenant_id: ${{ secrets.AZURE_TENANT_ID }}
         boundary_policy: ${{ secrets.AWS_PERMISSIONS_BOUNDARY_ARN }}
         env_suffix: ${{ github.event.pull_request.number }}
         google_project: ${{ secrets.GCP_PROJECT_ID }}
@@ -43,10 +46,10 @@ jobs:
       checks: write
       contents: write
     env:
-      ARM_SUBSCRIPTION_ID:  ${{ secrets.ARM_SUBSCRIPTION_ID }}
-      ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
-      ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
-      ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+      # ARM_SUBSCRIPTION_ID:  ${{ secrets.ARM_SUBSCRIPTION_ID }}
+      # ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+      # ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
+      # ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
       AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
     steps:
     # Check out merge commit
@@ -57,6 +60,9 @@ jobs:
     - id: integration-test
       uses: ./.github/actions/integration_tests
       with:
+        azure_client_id: ${{ secrets.AZURE_CLIENT_ID }}
+        azure_subscription_id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+        azure_tenant_id: ${{ secrets.AZURE_TENANT_ID }}
         boundary_policy: ${{ secrets.AWS_PERMISSIONS_BOUNDARY_ARN }}
         env_suffix: ${{ github.event.client_payload.pull_request.number }}
         google_project: ${{ secrets.GCP_PROJECT_ID }}
