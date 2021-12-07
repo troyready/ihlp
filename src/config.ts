@@ -95,6 +95,8 @@ export interface GcpDeploymentBlock extends Block {
 export interface EmptyGCPBucketsOnDestroyOpts {
   /** Buckets(s) - commma-separated or regular list */
   bucketNames: string[] | string;
+  /** Project in which the bucket(s) are located */
+  projectId?: string;
 }
 
 /** Block definition for emptying GCP buckets on destroy */

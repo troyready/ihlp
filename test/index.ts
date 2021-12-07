@@ -25,9 +25,9 @@ export async function pathExists(filepath: string): Promise<boolean> {
 
 /** Run tests */
 export async function test(): Promise<void> {
-  await gcpTfTests();
   await azureTfTests();
   await esbuildFunctionsTest();
+  await gcpTfTests();
 }
 
 test();

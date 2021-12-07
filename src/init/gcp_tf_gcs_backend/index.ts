@@ -59,6 +59,8 @@ const envOptions = {
       environment: "dev",
       namespace: "dev-ihlp-proj",
     },
+    // specify GCP project here or omit to inherit from \`gcloud auth application-default set-quota-project PROJECTID\`
+    // projectId: "",
   },
   prod: {
     namespace: "prod-ihlp-proj",
@@ -67,6 +69,8 @@ const envOptions = {
       environment: "prod",
       namespace: "prod-ihlp-proj",
     },
+    // specify GCP project here or omit to inherit from \`gcloud auth application-default set-quota-project PROJECTID\`
+    // projectId: "",
   },
 };
 
@@ -90,18 +94,20 @@ const ihlpConfig: IHLPConfig = {
                 },
               },
             ),
+            projectId: envOptions[process.env.IHLP_ENV].projectId // if undefined in envOptions, will fallback to application-default quota project
           },
           type: "gcp-deployment",
         },
         {
           options: {
             bucketNames: envOptions[process.env.IHLP_ENV].bucketName,
+            projectId: envOptions[process.env.IHLP_ENV].projectId // if undefined in envOptions, will fallback to application-default quota project
           },
           type: "gcp-empty-buckets-on-destroy",
         },
         {
           envVars: {
-            GOOGLE_PROJECT: "\${gcp-metadata project}",
+            GOOGLE_PROJECT: envOptions[process.env.IHLP_ENV].projectId ? envOptions[process.env.IHLP_ENV].projectId : "\${gcp-metadata project}",
           },
           options: {
             backendConfig: {
@@ -110,6 +116,7 @@ const ihlpConfig: IHLPConfig = {
             terraformVersion: "1.0.2", // specify here or in .terraform-version file in terraform directory
             variables: {
               labels: envOptions[process.env.IHLP_ENV].labels,
+              region: "\${env IHLP_LOCATION}",
             },
           },
           path: "example.tf",
@@ -147,6 +154,9 @@ module.exports = ihlpConfig;
 variable "labels" {
   default = {}
   type    = map
+}
+variable "region" {
+  type = string
 }
 
 provider "google" {}

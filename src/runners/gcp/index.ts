@@ -4,9 +4,16 @@
  * @packageDocumentation
  */
 
-import { GoogleAuth, OAuth2Client } from "google-auth-library";
+import * as fs from "fs";
+import * as os from "os";
+import * as path from "path";
+import {
+  GoogleAuth,
+  GoogleAuthOptions,
+  OAuth2Client,
+} from "google-auth-library";
 import { GaxiosOptions } from "gaxios";
-import { File, Storage } from "@google-cloud/storage";
+import { File, Storage, StorageOptions } from "@google-cloud/storage";
 
 import type {
   EmptyGCPBucketsOnDestroyBlock,
@@ -21,6 +28,43 @@ type gcpDeploymentData = Record<
   string | Record<string, number | string>
 >;
 
+export const gcpAppDefaultCredsPath = path.join(
+  os.homedir(),
+  ".config",
+  "gcloud",
+  "application_default_credentials.json",
+);
+
+function exitWithMissingQuotaProjError(msg: string): void {
+  logErrorRed(
+    'Error setting up GCP client - quota project must be provided in IHLP config or stored via "gcloud auth application-default set-quota-project"',
+  );
+  console.log(msg);
+  process.exit(1);
+}
+
+export function exitWithGCPNotLoggedInError(msg: string): void {
+  logErrorRed(
+    'Error setting up GCP client (are you logged in, e.g. "gcloud auth application-default login"?)',
+  );
+  console.log(msg);
+  process.exit(1);
+}
+
+export async function getGCPDefaultCredentialsQuotaProjectId(): Promise<
+  string | undefined
+> {
+  if (fs.existsSync(gcpAppDefaultCredsPath)) {
+    const appDefaultCreds = JSON.parse(
+      (await fs.promises.readFile(gcpAppDefaultCredsPath)).toString(),
+    );
+    if ("quota_project_id" in appDefaultCreds) {
+      return appDefaultCreds.quota_project_id;
+    }
+  }
+  return undefined;
+}
+
 /** Manage ARM deployment */
 export class GCPDeployment extends Runner {
   block: GcpDeploymentBlock;
@@ -28,18 +72,38 @@ export class GCPDeployment extends Runner {
   /** Process IHLP command for an ARM Deployment */
   async action(actionName: ActionName): Promise<void> {
     logGreen("Starting GCP Deployment Manager runner");
-    const auth = new GoogleAuth({
+
+    const authOpts: GoogleAuthOptions = {
       scopes: "https://www.googleapis.com/auth/cloud-platform",
-    });
-    let client: OAuth2Client;
-    // const client = await auth.getClient();
+    };
+    if (this.block.options.projectId) {
+      authOpts.projectId = this.block.options.projectId;
+    }
+
+    let auth = new GoogleAuth(authOpts);
+    let client!: OAuth2Client;
     try {
       client = (await auth.getClient()) as OAuth2Client;
     } catch (err) {
-      logErrorRed("Error setting up GCP client (are you logged in?)");
-      console.log(err.message);
-      process.exit(1);
+      if (err.message.includes("Unable to detect a Project Id")) {
+        const gcpDefaultCredentialsQuotaProjectId =
+          await getGCPDefaultCredentialsQuotaProjectId();
+        if (gcpDefaultCredentialsQuotaProjectId) {
+          authOpts.projectId = gcpDefaultCredentialsQuotaProjectId;
+          try {
+            auth = new GoogleAuth(authOpts);
+            client = (await auth.getClient()) as OAuth2Client;
+          } catch (err) {
+            exitWithGCPNotLoggedInError(err.message);
+          }
+        } else {
+          exitWithMissingQuotaProjError(err.message);
+        }
+      } else {
+        exitWithGCPNotLoggedInError(err.message);
+      }
     }
+
     const projectId = this.block.options.projectId
       ? this.block.options.projectId
       : await auth.getProjectId();
@@ -319,7 +383,12 @@ export class GCPEmptyBucketsOnDestroy extends Runner {
   async action(actionName: ActionName): Promise<void> {
     if (actionName == "destroy") {
       logGreen("Starting GCP bucket emptying runner");
-      const storage = new Storage();
+
+      const authOpts: StorageOptions = {};
+      if (this.block.options.projectId) {
+        authOpts.projectId = this.block.options.projectId;
+      }
+      let storage = new Storage(authOpts);
 
       let bucketNames: string[] = [];
       if (typeof this.block.options.bucketNames == "string") {
@@ -343,14 +412,34 @@ export class GCPEmptyBucketsOnDestroy extends Runner {
           if (err.code == 404) {
             logGreen("Bucket does not exist; nothing to do");
           } else {
-            logErrorRed("Unable to get files in bucket");
             if ("errors" in err) {
+              logErrorRed("Unable to get files in bucket");
               console.log(JSON.stringify(err.errors));
             } else if ("message" in err) {
-              logErrorRed("(are you logged in?)");
-              console.log(err.message);
+              if (err.message.includes("Unable to detect a Project Id")) {
+                const gcpDefaultCredentialsQuotaProjectId =
+                  await getGCPDefaultCredentialsQuotaProjectId();
+                if (gcpDefaultCredentialsQuotaProjectId) {
+                  authOpts.projectId = gcpDefaultCredentialsQuotaProjectId;
+                  storage = new Storage(authOpts);
+                  try {
+                    files.push(
+                      ...(
+                        await storage.bucket(bucketName).getFiles({
+                          versions: true,
+                        })
+                      )[0],
+                    );
+                  } catch (err) {
+                    exitWithGCPNotLoggedInError(err.message);
+                  }
+                }
+              } else {
+                exitWithGCPNotLoggedInError(err.message);
+              }
+            } else {
+              process.exit(1);
             }
-            process.exit(1);
           }
         }
         const deletionPromises: Promise<any>[] = [];

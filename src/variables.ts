@@ -4,6 +4,7 @@
  * @packageDocumentation
  */
 
+import * as fs from "fs";
 import {
   CloudFormationClient,
   DescribeStacksCommand,
@@ -16,6 +17,10 @@ import {
 } from "@aws-sdk/client-ssm";
 import { GoogleAuth } from "google-auth-library";
 
+import {
+  gcpAppDefaultCredsPath,
+  exitWithGCPNotLoggedInError,
+} from "./runners/gcp/index";
 import { logErrorRed, logGreen } from "./util";
 
 // easiest to test w/ https://regex101.com/
@@ -41,7 +46,7 @@ export async function processBlockVariables(
           config[objectKey] as string,
           verboseLogging,
         );
-      } else {
+      } else if (typeof config[objectKey] != "undefined") {
         config[objectKey] = await processBlockVariables(
           config[objectKey] as Record<string, unknown>,
           verboseLogging,
@@ -214,8 +219,22 @@ async function resolveVar(
           const projectId = await auth.getProjectId();
           return projectId;
         } catch (err) {
-          logErrorRed("Unable to get GCP project id (are you logged in?)");
-          process.exit(1);
+          if (err.message.includes("Unable to detect a Project Id")) {
+            if (fs.existsSync(gcpAppDefaultCredsPath)) {
+              const appDefaultCreds = JSON.parse(
+                (await fs.promises.readFile(gcpAppDefaultCredsPath)).toString(),
+              );
+              if ("quota_project_id" in appDefaultCreds) {
+                return appDefaultCreds.quota_project_id;
+              }
+            }
+            logErrorRed(
+              'No default GCP quota project specified (e.g. "gcloud auth application-default set-quota-project")',
+            );
+            console.log(err.message);
+            process.exit(1);
+          }
+          exitWithGCPNotLoggedInError(err.message);
         }
       } else {
         logErrorRed(
