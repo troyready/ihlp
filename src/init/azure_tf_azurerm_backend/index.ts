@@ -94,7 +94,7 @@ const ihlpConfig: IHLPConfig = {
               tags: envOptions[process.env.IHLP_ENV].tags,
             },
           },
-          path: "infra.tf",
+          path: "example.tf",
           type: "terraform",
         },
       ],
