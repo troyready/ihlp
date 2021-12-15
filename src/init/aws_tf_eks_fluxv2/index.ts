@@ -23,7 +23,7 @@ const envOptions = {
       environment: "dev",
       namespace: "dev-k8s-infra",
     },
-    tfVersion: "1.0.2",
+    tfVersion: "1.1.0",
   },
   prod: {
     clusterName: "prod-k8s",
@@ -34,7 +34,7 @@ const envOptions = {
       environment: "prod",
       namespace: "prod-k8s-infra",
     },
-    tfVersion: "1.0.2",
+    tfVersion: "1.1.0",
   },
 };
 
@@ -80,6 +80,7 @@ const ihlpConfig: IHLPConfig = {
               region: "\${env IHLP_LOCATION}",
               tags: envOptions[process.env.IHLP_ENV].tags,
             },
+            workspace: process.env.IHLP_ENV,
           },
           path: "eks-base.tf",
           type: "terraform",
@@ -102,6 +103,7 @@ const ihlpConfig: IHLPConfig = {
               repo_name: envOptions[process.env.IHLP_ENV].repoName,
               tags: envOptions[process.env.IHLP_ENV].tags,
             },
+            workspace: process.env.IHLP_ENV,
           },
           path: "flux-repo.tf",
           type: "terraform",
@@ -133,6 +135,7 @@ const ihlpConfig: IHLPConfig = {
                 envOptions[process.env.IHLP_ENV].clusterName
               }\`,
             },
+            workspace: process.env.IHLP_ENV,
           },
           path: "flux.tf",
           type: "terraform",
@@ -159,6 +162,7 @@ const ihlpConfig: IHLPConfig = {
                 envOptions[process.env.IHLP_ENV].clusterName
               }\`,
             },
+            workspace: process.env.IHLP_ENV,
           },
           path: "flux.tf",
           type: "terraform",

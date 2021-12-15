@@ -171,6 +171,8 @@ export interface TerraformBlockOpts extends BlockOpts {
   terraformVersion?: string;
   /** Terraform variables */
   variables?: Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
+  /** Terraform workspace to use/create; omit when using a pre-defined Terraform Enterprise/Cloud workspace */
+  workspace?: string;
 }
 
 /** Block definition for Terraform */

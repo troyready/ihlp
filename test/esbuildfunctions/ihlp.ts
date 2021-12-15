@@ -57,6 +57,7 @@ const ihlpConfig: IHLPConfig = {
               role_boundary_arn: process.env.AWS_PERMISSIONS_BOUNDARY_ARN,
               tags: tags,
             },
+            workspace: process.env.IHLP_ENV,
           },
           path: "example.tf",
           type: "terraform",

@@ -61,6 +61,7 @@ const envOptions = {
     },
     // specify GCP project here or omit to inherit from \`gcloud auth application-default set-quota-project PROJECTID\`
     // projectId: "",
+    tfVersion: "1.1.0",
   },
   prod: {
     namespace: "prod-ihlp-proj",
@@ -71,6 +72,7 @@ const envOptions = {
     },
     // specify GCP project here or omit to inherit from \`gcloud auth application-default set-quota-project PROJECTID\`
     // projectId: "",
+    tfVersion: "1.1.0",
   },
 };
 
@@ -113,11 +115,12 @@ const ihlpConfig: IHLPConfig = {
             backendConfig: {
               bucket: envOptions[process.env.IHLP_ENV].bucketName,
             },
-            terraformVersion: "1.0.2", // specify here or in .terraform-version file in terraform directory
+            terraformVersion: envOptions[process.env.IHLP_ENV].tfVersion, // specify here or in .terraform-version file in terraform directory
             variables: {
               labels: envOptions[process.env.IHLP_ENV].labels,
               region: "\${env IHLP_LOCATION}",
             },
+            workspace: process.env.IHLP_ENV,
           },
           path: "example.tf",
           type: "terraform",

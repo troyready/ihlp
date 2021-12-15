@@ -4,6 +4,7 @@
  * @packageDocumentation
  */
 
+import * as fs from "fs";
 import * as path from "path";
 import { spawnSync } from "child_process";
 
@@ -11,6 +12,7 @@ import { spawnSync } from "child_process";
 // https://stackoverflow.com/a/57866165
 import * as rimraf from "rimraf";
 
+import * as hcl from "hcl2-parser";
 import * as which from "which";
 
 import type { TerraformBlock, ActionName } from "../../config";
@@ -62,6 +64,34 @@ export class Terraform extends Runner {
     return envVars;
   }
 
+  /** Check Terraform files for a defined TF Cloud block*/
+  async checkForTfCloud(): Promise<boolean> {
+    const dirContents = await fs.promises.readdir(process.cwd());
+    for (const dirEntry of dirContents) {
+      if (dirEntry.endsWith(".tf")) {
+        try {
+          const tfFileContents = (
+            await fs.promises.readFile(dirEntry)
+          ).toString("utf-8");
+          const parsedTfFile = JSON.parse(hcl.parseToString(tfFileContents)[0]);
+          if ("terraform" in parsedTfFile) {
+            if ("cloud" in parsedTfFile["terraform"][0]) {
+              return true;
+            }
+          }
+        } catch (err) {
+          if (this.options.verbose) {
+            logGreen(
+              "Error encountered while checking Terraform file for terraform.cloud block:",
+            );
+            console.log(JSON.stringify(err));
+          }
+        }
+      }
+    }
+    return false;
+  }
+
   /** Perform all Terraform setup commands */
   async tfSetup(): Promise<TFSetupResult> {
     let tfVersionDir: boolean | string = false;
@@ -86,66 +116,80 @@ export class Terraform extends Runner {
       }
     }
 
+    const useTfCloud = await this.checkForTfCloud();
+
     await this.tfInit(
       terraformBinary,
       this.addTfVarsToEnv(this.block.options.variables),
+      useTfCloud,
       this.block.options.backendConfig,
     );
 
-    if (this.options.verbose) {
-      logGreen("Checking current Terraform workspace");
-    }
-    const currentWorkspace = spawnSync(terraformBinary, ["workspace", "show"])
-      .stdout.toString()
-      .trim();
-    if (this.options.verbose) {
-      logGreen(`Current Terraform workspace is ${currentWorkspace}`);
-    }
-    if (currentWorkspace != this.options.environment) {
+    if (this.block.options.workspace) {
       if (this.options.verbose) {
-        logGreen("Listing available Terraform workspaces");
+        logGreen("Checking current Terraform workspace");
       }
-      const existingtWorkspaces = spawnSync(terraformBinary, [
-        "workspace",
-        "list",
-      ])
+      const currentWorkspace = spawnSync(terraformBinary, ["workspace", "show"])
         .stdout.toString()
         .trim();
-      if (
-        existingtWorkspaces.match(
-          new RegExp(`\\s*${this.options.environment}$`, "m"),
-        )
-      ) {
-        if (this.options.verbose) {
-          logGreen(
-            `Desired Terraform workspace ${this.options.environment} has already been created; selecting it`,
-          );
-        }
-        exitCode = spawnSync(
-          terraformBinary,
-          ["workspace", "select", this.options.environment],
-          { stdio: "inherit" },
-        ).status;
-        if (exitCode != 0) {
-          process.exit(exitCode ? exitCode : 1);
-        }
-      } else {
-        logGreen(`Creating Terraform workspace ${this.options.environment}`);
-        exitCode = spawnSync(
-          terraformBinary,
-          ["workspace", "new", this.options.environment],
-          { stdio: "inherit" },
-        ).status;
-        if (exitCode != 0) {
-          process.exit(exitCode ? exitCode : 1);
-        }
+      if (this.options.verbose) {
+        logGreen(`Current Terraform workspace is ${currentWorkspace}`);
       }
+      if (currentWorkspace != this.block.options.workspace) {
+        if (this.options.verbose) {
+          logGreen("Listing available Terraform workspaces");
+        }
+        const existingtWorkspaces = spawnSync(terraformBinary, [
+          "workspace",
+          "list",
+        ])
+          .stdout.toString()
+          .trim();
+        if (
+          existingtWorkspaces.match(
+            new RegExp(`\\s*${this.block.options.workspace}$`, "m"),
+          )
+        ) {
+          if (this.options.verbose) {
+            logGreen(
+              `Desired Terraform workspace ${this.block.options.workspace} has already been created; selecting it`,
+            );
+          }
+          exitCode = spawnSync(
+            terraformBinary,
+            ["workspace", "select", this.block.options.workspace],
+            { stdio: "inherit" },
+          ).status;
+          if (exitCode != 0) {
+            process.exit(exitCode ? exitCode : 1);
+          }
+        } else {
+          logGreen(
+            `Creating Terraform workspace ${this.block.options.workspace}`,
+          );
+          exitCode = spawnSync(
+            terraformBinary,
+            ["workspace", "new", this.block.options.workspace],
+            { stdio: "inherit" },
+          ).status;
+          if (exitCode != 0) {
+            process.exit(exitCode ? exitCode : 1);
+          }
+        }
 
-      await this.tfInit(
-        terraformBinary,
-        this.addTfVarsToEnv(this.block.options.variables),
-        this.block.options.backendConfig,
-      ); // required after workspace change
+        await this.tfInit(
+          terraformBinary,
+          this.addTfVarsToEnv(this.block.options.variables),
+          useTfCloud,
+          this.block.options.backendConfig,
+        ); // required after workspace change
+      }
+    } else {
+      if (this.options.verbose) {
+        logGreen(
+          "Skipping Terraform workspace management (no workspace is defined in IHLP config)",
+        );
+      }
     }
     return { tfVersionDir: tfVersionDir, tfFullPath: terraformBinary };
   }
@@ -154,6 +198,7 @@ export class Terraform extends Runner {
   async tfInit(
     tfBin: string,
     envVars: NodeJS.ProcessEnv,
+    useTFCloud: boolean,
     backendConfig: Record<string, string> | undefined,
   ): Promise<void> {
     const supplementalArgs: string[] = [];
@@ -171,14 +216,22 @@ export class Terraform extends Runner {
       supplementalArgs.push("-upgrade");
     }
 
+    if (!useTFCloud) {
+      supplementalArgs.push("-reconfigure");
+    }
+
     logGreen("Running terraform init");
-    const exitCode = spawnSync(
-      tfBin,
-      ["init", "-reconfigure"].concat(supplementalArgs),
-      { env: envVars, stdio: "inherit" },
-    ).status;
+    const exitCode = spawnSync(tfBin, ["init"].concat(supplementalArgs), {
+      env: envVars,
+      stdio: "inherit",
+    }).status;
     if (exitCode != 0) {
       logErrorRed("Terraform init failed");
+      if (useTFCloud) {
+        logErrorRed(
+          `(Terraform cloud authentication failures may be fixed via "${tfBin} login")`,
+        );
+      }
       process.exit(exitCode ? exitCode : 1);
     }
   }

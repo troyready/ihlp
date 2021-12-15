@@ -13,6 +13,7 @@ import { awsTfWithS3Backend } from "./aws_tf_s3_backend";
 import { azureTfWithArmBackend } from "./azure_tf_azurerm_backend";
 import { gcpTfWithGCSBackend } from "./gcp_tf_gcs_backend";
 import { bareBones } from "./barebones";
+import { terraformCloud } from "./terraform_cloud";
 import {
   generateValidChoiceSelections,
   logErrorRed,
@@ -109,6 +110,10 @@ export async function init(): Promise<void> {
     {
       name: "Empty (barebones config)",
       worker: bareBones,
+    },
+    {
+      name: "Terraform with Terraform Cloud backend",
+      worker: terraformCloud,
     },
     {
       name: "(AWS) Terraform with S3 backend",
