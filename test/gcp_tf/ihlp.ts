@@ -56,6 +56,7 @@ const ihlpConfig: IHLPConfig = {
             variables: {
               labels: labels,
             },
+            workspace: process.env.IHLP_ENV,
           },
           path: "example.tf",
           type: "terraform",

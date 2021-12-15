@@ -5,6 +5,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Changed
+- Terraform workspace name must now be explicitly set
+  - This is mainly to support Terraform Enterprise/Cloud where a workspace name may be set in the Terraform files themselves
+
+### Added
+- Terraform Cloud init generator
+
 ### Fixed
 - Inconsistent directory name in sample azure template 
 

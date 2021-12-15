@@ -25,6 +25,7 @@ const envOptions = {
       environment: "dev",
       namespace: "dev-ihlp-proj",
     },
+    tfVersion: "1.1.0",
   },
   prod: {
     namespace: "prod-ihlp-proj",
@@ -34,6 +35,7 @@ const envOptions = {
       environment: "prod",
       namespace: "prod-ihlp-proj",
     },
+    tfVersion: "1.1.0",
   },
 };
     
@@ -87,12 +89,13 @@ const ihlpConfig: IHLPConfig = {
                 envOptions[process.env.IHLP_ENV].storageAccountName,
               container_name: "tfstate",
             },
-            terraformVersion: "1.0.2", // specify here or in .terraform-version file in terraform directory
+            terraformVersion: envOptions[process.env.IHLP_ENV].tfVersion, // specify here or in .terraform-version file in terraform directory
             variables: {
               location: "\${env IHLP_LOCATION}",
               namespace: envOptions[process.env.IHLP_ENV].namespace,
               tags: envOptions[process.env.IHLP_ENV].tags,
             },
+            workspace: process.env.IHLP_ENV,
           },
           path: "example.tf",
           type: "terraform",
