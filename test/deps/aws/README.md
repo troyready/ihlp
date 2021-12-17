@@ -4,7 +4,7 @@ Set the following GitHub repository secrets for integration tests.
 
 ### IAM Role
 
-Ensure the repo is listed as one of the valid ClientIds on the OIDC Provider (see below), then create the role and secrets with this directory's Terraform module:
+Create the role and secrets with this directory's Terraform module:
 
 ```
 resource "github_repository" "repo" {
@@ -39,8 +39,7 @@ An AWS IAM Identity provider must be created and configured for GitHub, e.g. in 
     Type: AWS::IAM::OIDCProvider
     Properties:
       ClientIdList:
-        <other repos here>
-        - https://github.com/<repo_full_name>
+        - sts.amazonaws.com
       ThumbprintList:
         - a031c46782e6e6c662c2c87c76da9aa62ccabd8e
       Url: https://vstoken.actions.githubusercontent.com
@@ -63,8 +62,7 @@ resource "aws_iam_openid_connect_provider" "github_actions" {
   url = "https://vstoken.actions.githubusercontent.com"
 
   client_id_list = [
-    <other repos>
-    "https://github.com/<repo_full_name>",
+    "sts.amazonaws.com",
   ]
 
   thumbprint_list = [
