@@ -23,6 +23,7 @@ import {
 } from "./runners/azure";
 import { GCPEmptyBucketsOnDestroy, GCPDeployment } from "./runners/gcp";
 import { EsbuildFunctions } from "./runners/esbuild";
+import { GoFunctions } from "./runners/functionbuilder_go";
 import { Serverless } from "./runners/serverless";
 import { SyncToRemoteStorage } from "./runners/synctoremotestorage";
 import { Terraform } from "./runners/terraform";
@@ -75,6 +76,9 @@ export function getBlockRunner(
     }
     case "esbuild-functions": {
       return new EsbuildFunctions(block, location, options);
+    }
+    case "functionbuilder-go": {
+      return new GoFunctions(block, location, options);
     }
     case "gcp-empty-buckets-on-destroy": {
       return new GCPEmptyBucketsOnDestroy(block, location, options);

@@ -222,6 +222,36 @@ export interface EsbuildFunctionsBlock extends Block {
   type: "esbuild-functions";
 }
 
+/** Block options for building golang functions */
+export interface FunctionBuilderGoBlockOpts extends BlockOpts {
+  /** Options for caching builds
+   *
+   * Enabling this allows builds to be bypassed when rolling back a repo.
+   */
+  archiveCache?: ArchiveCacheAwsOpts;
+  /** Comma-separated list of build tags */
+  buildTags?: string;
+  /** Environment variables to set when running build */
+  envVars?: Record<string, string>;
+  /** Path (relative to the base block path) where function zip files will be placed */
+  outDir?: string;
+  /** Path (relative to the base block path) containing the function directories */
+  srcDir?: string;
+  /** Override options for generating a tracking hash of the source files */
+  sourceHashOpts?: HashElementOptions; // https://github.com/marc136/node-folder-hash#options
+  /** Go version to use */
+  version?: string;
+}
+
+/** Block definition for building golang functions */
+export interface FunctionBuilderGoBlock extends Block {
+  name?: string;
+  options?: FunctionBuilderGoBlockOpts;
+  /** Path to functions' project directory */
+  path: string;
+  type: "functionbuilder-go";
+}
+
 /** Block options for emptying AWS S3 buckets on destroy */
 export interface EmptyAwsS3BucketsOpts {
   /** List of AWS S3 buckets to empty (comma-separated or regular array) */
@@ -324,6 +354,7 @@ export interface Deployment {
     | EmptyGCPBucketsOnDestroyBlock
     | EmptyS3BucketsOnDestroyBlock
     | EsbuildFunctionsBlock
+    | FunctionBuilderGoBlock
     | GcpDeploymentBlock
     | ServerlessBlock
     | SyncToRemoteStorageBlock

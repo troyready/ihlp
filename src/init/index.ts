@@ -9,6 +9,7 @@ import * as promptSync from "prompt-sync";
 import * as fs from "fs";
 import { awsServerlessFramework } from "./aws_serverless_framework";
 import { awsTfEksFluxV2 } from "./aws_tf_eks_fluxv2";
+import { awsTfGoLambda } from "./aws_tf_go_lambda";
 import { awsTfWithS3Backend } from "./aws_tf_s3_backend";
 import { azureTfWithArmBackend } from "./azure_tf_azurerm_backend";
 import { gcpTfWithGCSBackend } from "./gcp_tf_gcs_backend";
@@ -118,6 +119,10 @@ export async function init(): Promise<void> {
     {
       name: "(AWS) Terraform with S3 backend",
       worker: awsTfWithS3Backend,
+    },
+    {
+      name: "(AWS) Terraform with S3 backend deploying Golang Lambda Function",
+      worker: awsTfGoLambda,
     },
     {
       name: "(AWS) Terraform-managed EKS with FluxV2",
