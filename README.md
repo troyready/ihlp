@@ -4,8 +4,6 @@
 
 ## Overview
 
-TEST
-
 IHLP is a cross-platform program designed as a lightweight helper for infrastructure management.
 
 It compliments tools like Terraform and Serverless Framework, adding pre-deployment (like installing specific Terraform versions or initializing per-environment Terraform backends) and post-deployment (like syncing files to a S3 bucket and invalidating their CloudFront distribution cache) actions.
