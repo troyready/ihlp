@@ -18,13 +18,5 @@
         "node_modules/@types"
       ]
     },
-    "include": ["src",],
-    "typedocOptions": {
-      "exclude": [
-        "**/*.test.ts",
-        "**/__mocks__/*.ts"
-      ],
-      "mode": "modules",
-      "out": "docs"
-    }
+    "include": ["src",]
   }

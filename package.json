@@ -57,20 +57,20 @@
     "@types/which": "^2.0.1",
     "@typescript-eslint/eslint-plugin": "^4.31.1",
     "@typescript-eslint/parser": "^4.31.1",
+    "docsify-cli": "^4.4.3",
     "eslint": "^7.32.0",
     "eslint-config-prettier": "^8.3.0",
     "eslint-plugin-prettier": "^4.0.0",
     "gaxios": "^4.3.2",
     "jest": "^27.3.1",
     "prettier": "^2.2.1",
-    "ts-jest": "^27.0.7",
-    "typedoc": ">=0.20"
+    "ts-jest": "^27.0.7"
   },
   "description": "Infrastructure/app management helper",
   "main": "index.js",
   "scripts": {
     "prepare": "tsc",
-    "docs": "typedoc",
+    "docs": "docsify serve ./docs",
     "integration": "ts-node test/index.ts",
     "lint": "eslint scripts src test .eslintrc.js jest.config.js --ext .js,.jsx,.ts,.tsx",
     "lintfix": "npm run lint -- --fix",

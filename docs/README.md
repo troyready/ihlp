@@ -22,10 +22,6 @@ npx ihlp init
 
 The initialization process will have you choose a starter template. Custom it and deploy it via `npx ihlp deploy -e dev`.
 
-## Documentation
-
-Doc site is available [here](https://troyready.github.io/ihlp/).
-
 ## Uses
 
 * Enabling safe GitOps workflows:
@@ -36,3 +32,9 @@ Doc site is available [here](https://troyready.github.io/ihlp/).
 * Enforce Terraform execution best-practices:
   * Use of [Workspaces](https://www.terraform.io/docs/language/state/workspaces.html)
   * Retrieving any [module updates](https://www.terraform.io/docs/cli/commands/get.html#update) before plan/apply
+
+## FAQ
+
+### Disabling Color in Logging
+
+Messages are logged with color using the [chalk library](https://github.com/chalk/chalk/tree/v4.1.2#chalksupportscolor). It can be explicitly disabled by setting the [FORCE_COLOR environment variable](https://github.com/chalk/chalk/tree/v4.1.2#chalksupportscolor) to `0`.
