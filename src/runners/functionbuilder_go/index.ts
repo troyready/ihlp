@@ -10,6 +10,7 @@ import * as path from "path";
 import { hashElement } from "folder-hash";
 import * as md5File from "md5-file";
 import * as tar from "tar";
+import * as which from "which";
 import {
   PutObjectCommand,
   S3Client,
@@ -68,10 +69,21 @@ export class GoFunctions extends Runner {
     }
 
     let goBinary: string;
+    let goRoot: string;
     if (this.block.options?.version) {
       goBinary = await getGo(this.block.options.version);
+      goRoot = path.basename(path.basename(path.dirname(goBinary)));
     } else {
       goBinary = "go";
+      const goBinaryFullPath = await which(goBinary);
+      if (goBinaryFullPath) {
+        goRoot = path.basename(path.basename(path.dirname(goBinaryFullPath)));
+      } else {
+        logErrorRed(
+          "No Go version specified and no go executable found on path",
+        );
+        process.exit(1);
+      }
     }
 
     for (const dirName of functionDirs) {
@@ -170,6 +182,7 @@ export class GoFunctions extends Runner {
       const fullyQualifiedZipfilename = await this.buildAndZip(
         dirName,
         goBinary,
+        goRoot,
         this.block.options?.srcDir,
         this.block.options?.outDir,
         this.block.options?.buildTags,
@@ -193,6 +206,7 @@ export class GoFunctions extends Runner {
   async buildAndZip(
     dirName: string,
     goBinary: string,
+    goRoot: string,
     baseSrcDir: string | undefined,
     baseOutDir: string | undefined,
     buildTags: string | undefined,
@@ -213,7 +227,13 @@ export class GoFunctions extends Runner {
       process.exit(exitCode ? exitCode : 1);
     }
 
-    const commandArgs = ["build", "-o", "bootstrap"];
+    const commandArgs = [
+      "build",
+      "-asmflags=-trimpath=all=" + goRoot + "/src",
+      "-gcflags=-trimpath=all=" + goRoot + "/src",
+      "-o",
+      "bootstrap",
+    ];
 
     if (buildTags) {
       commandArgs.push("-tags=" + buildTags);
