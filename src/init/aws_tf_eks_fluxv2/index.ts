@@ -185,7 +185,7 @@ node_modules
 
   const readmeContents = `# Overview
 
-This repo represents a sample Terraform infrastructure deployment of EKS & [Flux](https://fluxcd.io/). Terraform is used to manage the base infrastructure components, including a CodeCommit git repo configured for continous deployment via Flux.
+This repo represents a sample Terraform infrastructure deployment of EKS & [Flux](https://fluxcd.io/). Terraform is used to manage the base infrastructure components, including a CodeCommit git repo configured for continuous deployment via Flux.
 
 ## Prerequisites
 
