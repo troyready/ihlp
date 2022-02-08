@@ -775,7 +775,7 @@ It is **strongly recommended** to [disable public access](https://docs.aws.amazo
 
 An IAM OIDC identity provider is configured (see \`aws_iam_openid_connect_provider\` in the [eks-auth-and-nodes.tf](./eks-auth-and-nodes.tf/main.tf) module) to allow containers access to AWS APIs (by way of annotated k8s service accounts).
 
-The example [job-s3-echo.tf](./job-s3-echo.tf/main.tf) module creates an IAM role, a k8s service account annotated with the role, and a job using the service account to place an object on S3 (see the bucket starting with \`eks-s3-echo-\` after deployment).
+The example [job-s3-echo.tf](./job-s3-echo.tf/main.tf) module creates an IAM role, a k8s service account annotated with the role, and a job using the service account to place an object on S3 (see the bucket starting with \`dev-eks-s3-echo-\` after deployment).
 `;
 
   const s3EchoTfConfig = `# Backend setup
@@ -809,6 +809,10 @@ variable "cluster_name" {
   type = string
 }
 variable "region" {}
+variable "tags" {
+  default = {}
+  type    = map(any)
+}
 
 # Provider and access setup
 provider "aws" {
@@ -846,8 +850,9 @@ data "aws_ssm_parameter" "oidc_iam_provider_cluster_arn" {
 
 resource "aws_s3_bucket" "bucket" {
   acl           = "private"
-  bucket_prefix = "eks-\${local.job_name}-"
+  bucket_prefix = "\${terraform.workspace}-eks-\${local.job_name}-"
   force_destroy = "true"
+  tags          = var.tags
 }
 
 data "aws_iam_policy_document" "service_account_assume_role_policy" {
@@ -878,10 +883,10 @@ data "aws_iam_policy_document" "service_account_assume_role_policy" {
 }
 resource "aws_iam_role" "service_account" {
   assume_role_policy = data.aws_iam_policy_document.service_account_assume_role_policy.json
-  name_prefix        = "eks-\${local.sa_name}-"
+  name_prefix        = "\${terraform.workspace}-eks-\${local.sa_name}-"
+  tags               = var.tags
 }
 data "aws_iam_policy_document" "service_account" {
-
   statement {
     actions = [
       "s3:ListBucket",
