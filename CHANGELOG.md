@@ -6,6 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
+- AWS EKS w/ example IAM-integration job init generator
 - Go function builder will now attempt to strip GOPATH from builds for reproducibility
 
 ## [0.6.0] - 2021-12-16
