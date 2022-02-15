@@ -501,9 +501,8 @@ data "flux_sync" "main" {
   branch      = var.branch
   target_path = var.target_path
 
-  # would be a little cleaner to just use http credentials (and not need to do this replacement)
-  # if it was supported in TF:
-  # https://github.com/hashicorp/terraform-provider-aws/issues/3233
+  # An alternate option to this substitution would be to use a CodeCommit ServiceSpecificCredential
+  # https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_service_specific_credential
   url = replace(
     data.aws_codecommit_repository.repo.clone_url_ssh,
     "ssh://",
