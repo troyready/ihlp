@@ -124,7 +124,7 @@ async function downloadVersion(
     zip.extractAllTo(tmpDir.path);
 
     await fs.promises.mkdir(path.join(versionsDir, version));
-    await fs.promises.rename(
+    await fs.promises.copyFile(
       path.join(tmpDir.path, tfExecutable),
       path.join(versionsDir, version, tfExecutable),
     );
