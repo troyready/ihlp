@@ -30,15 +30,14 @@ runs:
         role-session-name: IhlpGitHubActions
 
     # https://github.com/google-github-actions/auth#configuring-gcloud
-    - uses: 'google-github-actions/setup-gcloud@master'
-      with:
-        project_id: ${{ inputs.google_project }}
     - id: 'gcpauth'
       name: 'Authenticate to Google Cloud'
-      uses: 'google-github-actions/auth@v0.4.0'
+      uses: 'google-github-actions/auth@v0.8.1'
       with:
         workload_identity_provider: ${{ inputs.google_workload_identity_provider }}
         service_account: ${{ inputs.google_service_account }}
+    - name: 'Set up GCP Cloud SDK'
+      uses: 'google-github-actions/setup-gcloud@v0.6.0'
 
     - run: echo "Installing node modules"
       shell: bash
