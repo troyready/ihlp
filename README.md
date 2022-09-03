@@ -32,7 +32,7 @@ Doc site is available [here](https://troyready.github.io/ihlp/).
   * When rolling back changes, previous working builds (e.g. AWS Lambda functions or React sites) will be automatically used instead of rebuilding them
 * Combining multiple deployment systems (e.g. CloudFormation or Azure Resource Manager alongside Terraform, or Terraform and Serverless Framework)
 * Combining multiple Terraform projects
-  * Especially useful for when a single Terraform configuration isn't technically feasible (e.g. [dynamic](https://www.terraform.io/docs/language/providers/configuration.html#provider-configuration-1) [provider](https://github.com/hashicorp/terraform/issues/2976) [values](https://github.com/hashicorp/terraform/issues/4149))
+  * Especially useful for when a single Terraform configuration isn't technically feasible (e.g. [dynamic](https://www.terraform.io/docs/language/providers/configuration.html#provider-configuration-1) [provider](https://github.com/hashicorp/terraform/issues/2976) [values](https://github.com/hashicorp/terraform/issues/30937))
 * Enforce Terraform execution best-practices:
   * Use of [Workspaces](https://www.terraform.io/docs/language/state/workspaces.html)
   * Retrieving any [module updates](https://www.terraform.io/docs/cli/commands/get.html#update) before plan/apply

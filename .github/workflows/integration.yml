@@ -1,6 +1,9 @@
 # Run secret-dependent integration tests only after /ok-to-test approval
 on:
-  pull_request: {}
+  pull_request:
+    paths-ignore:
+      - '**/README.md'
+      - '**/CHANGELOG.md'
   repository_dispatch:
     types: [ok-to-test-command]
 
