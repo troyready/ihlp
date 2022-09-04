@@ -218,7 +218,7 @@ module.exports = ihlpConfig;
   }
 
   required_providers {
-    azurerm = ">=2.0"
+    azurerm = ">=3.7"
   }
 }
 

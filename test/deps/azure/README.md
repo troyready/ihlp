@@ -1,28 +1,41 @@
 ## Azure Setup
 
-Set the following GitHub repository secrets for integration tests.
+Use this directory's Terraform module to create the GitHub Actions -> Azure OIDC trust and set the GitHub repository secrets for integration tests:
 
-### Subscription ID
-
-Set `ARM_SUBSCRIPTION_ID` to the ID of the Azure subscription to use (i.e. from `az account show`). This is referenced by [Terraform](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/guides/service_principal_client_secret#configuring-the-service-principal-in-terraform) and IHLP ARM deployments.
-
-### Service Principal
-
-GitHub Actions runs integration tests using an [Azure Service Principal](https://docs.microsoft.com/en-us/cli/azure/create-an-azure-service-principal-azure-cli). Create it using a command like the following:
-
-```bash
-az ad sp create-for-rbac --skip-assignment --name IHLPIntegrationTester
 ```
+provider "azuread" {
+  tenant_id = <tenant_id>
+}
 
-Then set the repository secrets:
+provider "azurerm" {
+  features {}
+}
 
-* `ARM_CLIENT_ID` - set to the displayed `appId`
-* `ARM_TENANT_ID` - set to the displayed `tenant`
-* `ARM_CLIENT_SECRET` - set to the displayed `password`
+resource "github_repository" "repo" {
+  name = <repo_name>
+}
 
-Finally, assign a role to the principal:
+module "oidc" {
+  source = "github.com/<repo_full_name>//test/deps/azure"
 
-```bash
-az deployment sub create --confirm-with-what-if --what-if-exclude-change-types NoChange --location eastus --template-file role-assignment.json --parameters principalId=$(az ad sp list --display-name IHLPIntegrationTester --query '[].objectId' --output tsv) builtInRoleType=Owner roleAssignmentGuid=1C7F92B9-C8E8-43A6-BF94-8D3FC5E27A8E
+  repo_name = github_repository.repo.full_name
+}
+
+resource "github_actions_secret" "ARM_CLIENT_ID" {
+  repository      = github_repository.repo.name
+  plaintext_value = module.oidc.client_id
+  secret_name     = "ARM_CLIENT_ID"
+}
+
+resource "github_actions_secret" "ARM_SUBSCRIPTION_ID" {
+  repository      = github_repository.repo.name
+  plaintext_value = module.oidc.subscription_id
+  secret_name     = "ARM_SUBSCRIPTION_ID"
+}
+
+resource "github_actions_secret" "ARM_TENANT_ID" {
+  repository      = github_repository.repo.name
+  plaintext_value = module.oidc.tenant_id
+  secret_name     = "ARM_TENANT_ID"
+}
 ```
-([roleAssignmentGuid was generated](https://stackoverflow.com/questions/246930/is-there-any-difference-between-a-guid-and-a-uuid) via `uuidgen| awk '{print toupper($0)}'`)

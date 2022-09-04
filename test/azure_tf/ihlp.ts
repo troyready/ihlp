@@ -60,7 +60,7 @@ const ihlpConfig: IHLPConfig = {
               storage_account_name: storageName,
               container_name: "tfstate",
             },
-            terraformVersion: "1.0.2",
+            terraformVersion: "1.2.8",
             variables: {
               resource_group: {
                 location: "${env IHLP_LOCATION}",
