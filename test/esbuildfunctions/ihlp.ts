@@ -50,7 +50,7 @@ const ihlpConfig: IHLPConfig = {
               dynamodb_table: `\${aws-cfn-output stack=${tfStackName},output=TableName}`,
               region: "${env IHLP_LOCATION}",
             },
-            terraformVersion: "1.0.2",
+            terraformVersion: "1.2.8",
             variables: {
               node_version: nodeVersion,
               region: "${env IHLP_LOCATION}",
