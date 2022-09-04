@@ -8,8 +8,13 @@ import * as promptSync from "prompt-sync";
 import * as fs from "fs";
 import { DefaultAzureCredential } from "@azure/identity";
 import {
-  ResourceManagementModels,
+  Deployment,
+  DeploymentExtended,
+  DeploymentMode,
+  DeploymentWhatIf,
   ResourceManagementClient,
+  WhatIfChange,
+  WhatIfOperationResult,
 } from "@azure/arm-resources";
 
 import type {
@@ -23,9 +28,7 @@ import { Runner } from "../";
 const prompt = promptSync();
 
 /** Check response from creation/updating deployment and exit the program if it contains errors */
-function exitOnCreateOrUpdateError(
-  response: ResourceManagementModels.DeploymentsCreateOrUpdateResponse,
-): void {
+function exitOnCreateOrUpdateError(response: DeploymentExtended): void {
   if (response.properties?.error) {
     logErrorRed("Error returned from Azure:");
     console.log(JSON.stringify(response.properties.error, null, 2));
@@ -50,9 +53,7 @@ function handleCaughtCreateOrUpdateError(
 }
 
 /** Check response from What-If and exit the program if it contains errors */
-function exitOnWhatIfError(
-  response: ResourceManagementModels.WhatIfOperationResult,
-): void {
+function exitOnWhatIfError(response: WhatIfOperationResult): void {
   if ("error" in response && response.error) {
     logErrorRed("Error returned from Azure:");
     console.log(JSON.stringify(response.error, null, 2));
@@ -72,12 +73,12 @@ export class AzureArmDeployment extends Runner {
     if (actionName == "destroy") {
       logGreen("Deleting ARM Deployment...");
       if (this.block.options.deployTo) {
-        await armClient.deployments.deleteMethod(
+        await armClient.deployments.beginDeleteAndWait(
           this.block.options.deployTo.resourceGroupName,
           this.block.options.deploymentName,
         );
       } else {
-        await armClient.deployments.deleteAtSubscriptionScope(
+        await armClient.deployments.beginDeleteAtSubscriptionScopeAndWait(
           this.block.options.deploymentName,
         );
       }
@@ -93,21 +94,22 @@ export class AzureArmDeployment extends Runner {
           "Checking Azure for changes that will occur if deployment is created/updated...",
         );
 
-        let whatIfRes: ResourceManagementModels.WhatIfOperationResult;
+        let whatIfRes: WhatIfOperationResult;
         if (this.block.options.deployTo) {
-          whatIfRes = await armClient.deployments.whatIf(
+          whatIfRes = await armClient.deployments.beginWhatIfAndWait(
             this.block.options.deployTo.resourceGroupName,
             this.block.options.deploymentName,
             await this.getDeployParameters(),
           );
         } else {
-          whatIfRes = await armClient.deployments.whatIfAtSubscriptionScope(
-            this.block.options.deploymentName,
-            await this.getDeployParameters(),
-          );
+          whatIfRes =
+            await armClient.deployments.beginWhatIfAtSubscriptionScopeAndWait(
+              this.block.options.deploymentName,
+              await this.getDeployParameters(),
+            );
         }
         exitOnWhatIfError(whatIfRes);
-        const proposedChanges: ResourceManagementModels.WhatIfChange[] = [];
+        const proposedChanges: WhatIfChange[] = [];
         if (whatIfRes.changes) {
           for (const proposedChange of whatIfRes.changes) {
             if (
@@ -168,11 +170,12 @@ export class AzureArmDeployment extends Runner {
       `Creating or updating ARM Deployment ${this.block.options.deploymentName} in Resource Group ${this.block.options.deployTo.resourceGroupName}...`,
     );
     try {
-      const createOrUpdateRes = await armClient.deployments.createOrUpdate(
-        this.block.options.deployTo.resourceGroupName,
-        this.block.options.deploymentName,
-        await this.getDeployParameters(),
-      );
+      const createOrUpdateRes =
+        await armClient.deployments.beginCreateOrUpdateAndWait(
+          this.block.options.deployTo.resourceGroupName,
+          this.block.options.deploymentName,
+          await this.getDeployParameters(),
+        );
       exitOnCreateOrUpdateError(createOrUpdateRes);
     } catch (error) {
       handleCaughtCreateOrUpdateError(error);
@@ -188,7 +191,7 @@ export class AzureArmDeployment extends Runner {
     );
     try {
       const createOrUpdateRes =
-        await armClient.deployments.createOrUpdateAtSubscriptionScope(
+        await armClient.deployments.beginCreateOrUpdateAtSubscriptionScopeAndWait(
           this.block.options.deploymentName,
           await this.getDeployParameters(),
         );
@@ -199,13 +202,10 @@ export class AzureArmDeployment extends Runner {
   }
 
   /** Generate deployment parameters */
-  async getDeployParameters(): Promise<
-    | ResourceManagementModels.DeploymentWhatIf
-    | ResourceManagementModels.Deployment
-  > {
+  async getDeployParameters(): Promise<DeploymentWhatIf | Deployment> {
     const params = {
       properties: {
-        mode: "Complete" as ResourceManagementModels.DeploymentMode,
+        mode: "Complete" as DeploymentMode,
         template: JSON.parse(
           await fs.promises.readFile(this.block.options.templatePath, "utf8"),
         ),
@@ -250,7 +250,7 @@ export class AzureDeleteResourceGroupsOnDestroy extends Runner {
 
       for (const resourceGroupName of resourceGroupNames) {
         logGreen(`Deleting Resource Group ${resourceGroupName}...`);
-        await armClient.resourceGroups.deleteMethod(resourceGroupName);
+        await armClient.resourceGroups.beginDeleteAndWait(resourceGroupName);
       }
       logGreen("Resource Group deletions complete");
     } else {
