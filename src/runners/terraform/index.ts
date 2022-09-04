@@ -285,6 +285,13 @@ export class Terraform extends Runner {
         logGreen("Removing .terraform directory"); // so subsequent deploys don't give a "The currently selected workspace (foo) does not exist." error
         rimraf.sync(path.join(process.cwd(), ".terraform"));
       }
+    } catch (err) {
+      if ("dest" in err && err.code == "ENOENT") {
+        logErrorRed("Unable to switch to directory: " + this.block.path);
+        process.exit(1);
+      } else {
+        throw err;
+      }
     } finally {
       process.chdir(origWorkingDir);
     }

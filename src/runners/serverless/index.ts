@@ -65,6 +65,13 @@ export class Serverless extends Runner {
       }
 
       logGreen("Serverless Runner complete!");
+    } catch (err) {
+      if ("dest" in err && err.code == "ENOENT") {
+        logErrorRed("Unable to switch to directory: " + this.block.path);
+        process.exit(1);
+      } else {
+        throw err;
+      }
     } finally {
       process.chdir(origWorkingDir);
     }
