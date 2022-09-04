@@ -94,7 +94,7 @@ export async function deleteResourceGroup(
     new DefaultAzureCredential(),
     subscriptionId,
   );
-  await armClient.resourceGroups.deleteMethod(env + "-ihlpazuretf");
+  await armClient.resourceGroups.beginDeleteAndWait(env + "-ihlpazuretf");
 }
 
 // ** Add SDK-compatible environment variables from existing TF credentials
