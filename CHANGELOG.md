@@ -6,6 +6,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0] - 2022-09-04
+### Fixed
+- Directory changes errors will now generate proper error messages instead of stacktraces
+
+### Changed
+- Default version of Terraform is now v1.2.8
+- Update `@azure/arm-resources` dependency to v5
+
 ## [0.6.3] - 2022-02-20
 ### Fixed
 - Terraform installation errors when temporary directories on are separate filesystems
@@ -125,7 +133,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Initial commit
 
-[Unreleased]: https://github.com/troyready/ihlp/compare/v0.6.3...HEAD
+[Unreleased]: https://github.com/troyready/ihlp/compare/v0.7.0...HEAD
+[0.7.0]: https://github.com/troyready/ihlp/compare/v0.6.3...v0.7.0
+[0.7.0]: https://github.com/troyready/ihlp/compare/v0.6.3...v0.7.0
 [0.6.3]: https://github.com/troyready/ihlp/compare/v0.6.2...v0.6.3
 [0.6.2]: https://github.com/troyready/ihlp/compare/v0.6.1...v0.6.2
 [0.6.1]: https://github.com/troyready/ihlp/compare/v0.6.0...v0.6.1
