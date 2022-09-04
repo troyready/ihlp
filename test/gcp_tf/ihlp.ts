@@ -52,7 +52,7 @@ const ihlpConfig: IHLPConfig = {
             backendConfig: {
               bucket: bucketName,
             },
-            terraformVersion: "1.0.2", // specify here or in .terraform-version file in terraform directory
+            terraformVersion: "1.2.8", // specify here or in .terraform-version file in terraform directory
             variables: {
               labels: labels,
             },

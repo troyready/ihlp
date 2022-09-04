@@ -612,7 +612,7 @@ const envOptions = {
       environment: "dev",
       namespace: "dev-k8s-infra",
     },
-    tfVersion: "1.1.5",
+    tfVersion: "1.2.8",
   },
   prod: {
     clusterName: "prod-k8s",
@@ -623,7 +623,7 @@ const envOptions = {
       environment: "prod",
       namespace: "prod-k8s-infra",
     },
-    tfVersion: "1.1.5",
+    tfVersion: "1.2.8",
   },
 };
 

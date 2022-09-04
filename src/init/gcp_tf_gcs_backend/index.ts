@@ -61,7 +61,7 @@ const envOptions = {
     },
     // specify GCP project here or omit to inherit from \`gcloud auth application-default set-quota-project PROJECTID\`
     // projectId: "",
-    tfVersion: "1.1.0",
+    tfVersion: "1.2.8",
   },
   prod: {
     namespace: "prod-ihlp-proj",
@@ -72,7 +72,7 @@ const envOptions = {
     },
     // specify GCP project here or omit to inherit from \`gcloud auth application-default set-quota-project PROJECTID\`
     // projectId: "",
-    tfVersion: "1.1.0",
+    tfVersion: "1.2.8",
   },
 };
 

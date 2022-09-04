@@ -21,7 +21,7 @@ const envOptions = {
       environment: "dev",
       namespace: "dev-ihlp-proj",
     },
-    tfVersion: "1.1.0",
+    tfVersion: "1.2.8",
   },
   prod: {
     functionArchitecture: "arm64",
@@ -30,7 +30,7 @@ const envOptions = {
       environment: "prod",
       namespace: "prod-ihlp-proj",
     },
-    tfVersion: "1.1.0",
+    tfVersion: "1.2.8",
   },
 };
 
