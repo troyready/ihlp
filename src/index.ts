@@ -142,6 +142,13 @@ class IHLP {
       if (exitCode != 0) {
         process.exit(exitCode ? exitCode : 1);
       }
+    } catch (err) {
+      if ("dest" in err && err.code == "ENOENT") {
+        logErrorRed("Unable to switch to directory: " + block.path);
+        process.exit(1);
+      } else {
+        throw err;
+      }
     } finally {
       process.chdir(origWorkingDir);
     }
