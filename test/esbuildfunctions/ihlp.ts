@@ -5,7 +5,7 @@ if (!process.env.IHLP_ENV || !process.env.AWS_PERMISSIONS_BOUNDARY_ARN) {
   process.exit(1);
 }
 
-const nodeVersion = "14";
+const nodeVersion = "16";
 const tfStackName = `${process.env.IHLP_ENV}-tf-state`;
 const tags = {
   environment: process.env.IHLP_ENV,
