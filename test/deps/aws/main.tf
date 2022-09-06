@@ -168,6 +168,30 @@ data "aws_iam_policy_document" "policy" {
 
   statement {
     actions = [
+      "logs:DescribeLogGroups",
+    ]
+
+    resources = [
+      "arn:${data.aws_partition.current.partition}:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:*",
+    ]
+  }
+
+  statement {
+    actions = [
+      "logs:CreateLogGroup",
+      "logs:DeleteLogGroup",
+      "logs:ListTagsLogGroup",
+      "logs:TagLogGroup",
+      "logs:UntagLogGroup",
+    ]
+
+    resources = [
+      "arn:${data.aws_partition.current.partition}:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:/aws/lambda/${var.resource_prefix}*",
+    ]
+  }
+
+  statement {
+    actions = [
       "s3:CreateBucket",
       "s3:DeleteBucket",
       "s3:DeleteObject",
