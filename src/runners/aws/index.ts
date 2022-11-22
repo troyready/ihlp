@@ -7,6 +7,7 @@
 import * as fs from "fs";
 import {
   CloudFormationClient,
+  CloudFormationClientConfig,
   CreateChangeSetCommandInput,
   CreateChangeSetCommand,
   DeleteChangeSetCommand,
@@ -30,7 +31,7 @@ import type {
   ActionName,
   EmptyS3BucketsOnDestroyBlock,
 } from "../../config";
-import { logErrorRed, logGreen } from "../../util";
+import { assumeAWSRole, logErrorRed, logGreen } from "../../util";
 import { Runner } from "../";
 
 /** Manage AWS CloudFormation stacks */
@@ -40,7 +41,20 @@ export class AwsCfnStack extends Runner {
   /** Process IHLP command for AWS CloudFormation stack */
   async action(actionName: ActionName): Promise<void> {
     const changeSetInput = await getChangeSetInput(this.block.options);
-    const cfnClient = new CloudFormationClient({ region: this.location });
+    const cfnClientConfig: CloudFormationClientConfig = {
+      region: this.location,
+    };
+    if (this.block.options.assumeRoleArn) {
+      cfnClientConfig.credentials = await assumeAWSRole(
+        this.block.options.assumeRoleArn,
+        this.block.options.assumeRoleSessionName
+          ? this.block.options.assumeRoleSessionName
+          : "ihlp",
+        this.location,
+        this.block.options.assumeRoleDuration,
+      );
+    }
+    const cfnClient = new CloudFormationClient(cfnClientConfig);
 
     try {
       await cfnClient.send(
@@ -161,6 +175,10 @@ async function getChangeSetInput(
   }
   return changeSetInput;
 }
+
+// TODO: most of these wait functions should be replaced with the built-in SDK waiters
+// https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/clients/client-cloudformation/index.html
+// https://github.com/aws/aws-sdk-js-v3/issues/2169
 
 /** Wait for CloudFormation ChangeSet creation to complete */
 async function waitForChangeSetCreateComplete(
@@ -391,6 +409,16 @@ export class AwsEmptyS3BucketsOnDestroy extends Runner {
       const s3ClientConfig: S3ClientConfig = {};
       if (process.env.IHLP_LOCATION) {
         s3ClientConfig["region"] = process.env.IHLP_LOCATION;
+      }
+      if (this.block.options.assumeRoleArn) {
+        s3ClientConfig.credentials = await assumeAWSRole(
+          this.block.options.assumeRoleArn,
+          this.block.options.assumeRoleSessionName
+            ? this.block.options.assumeRoleSessionName
+            : "ihlp",
+          this.location,
+          this.block.options.assumeRoleDuration,
+        );
       }
       const s3Client = new S3Client(s3ClientConfig);
 
