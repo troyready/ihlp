@@ -6,6 +6,7 @@
 
 import * as fs from "fs";
 import {
+  CloudFormationClientConfig,
   CloudFormationClient,
   DescribeStacksCommand,
 } from "@aws-sdk/client-cloudformation";
@@ -21,7 +22,7 @@ import {
   gcpAppDefaultCredsPath,
   exitWithGCPNotLoggedInError,
 } from "./runners/gcp/index";
-import { logErrorRed, logGreen } from "./util";
+import { assumeAWSRole, logErrorRed, logGreen } from "./util";
 
 // easiest to test w/ https://regex101.com/
 const varRegexp = /(?<!\$)\${([-a-z]*)\s(.*)}/g;
@@ -92,7 +93,8 @@ async function resolveVar(
     case "aws-cfn-output":
       {
         const opts = {};
-        const cfnClientOpts = {};
+        const cfnClientOpts: CloudFormationClientConfig = {};
+        const cfnClientCredOpts = {};
 
         for (const opt of varArg.split(",")) {
           if (opt.startsWith("stack=")) {
@@ -101,11 +103,34 @@ async function resolveVar(
             opts["outputName"] = opt.split("output=")[1];
           } else if (opt.startsWith("region=")) {
             cfnClientOpts["region"] = opt.split("region=")[1];
+          } else if (opt.startsWith("assumerolearn=")) {
+            cfnClientCredOpts["arn"] = opt.split("assumerolearn=")[1];
+          } else if (opt.startsWith("assumerolesessionname=")) {
+            cfnClientCredOpts["sessionName"] = opt.split(
+              "assumerolesessionname=",
+            )[1];
+          } else if (opt.startsWith("assumeroleduration=")) {
+            cfnClientCredOpts["duration"] = Number(
+              opt.split("assumeroleduration=")[1],
+            );
           }
         }
 
         if (!("region" in cfnClientOpts)) {
           cfnClientOpts["region"] = process.env["IHLP_LOCATION"];
+        }
+
+        if ("arn" in cfnClientCredOpts) {
+          cfnClientOpts.credentials = await assumeAWSRole(
+            cfnClientCredOpts["arn"],
+            "sessionName" in cfnClientCredOpts
+              ? cfnClientCredOpts["sessionName"]
+              : "ihlp",
+            cfnClientCredOpts["region"],
+            "duration" in cfnClientCredOpts
+              ? cfnClientCredOpts["duration"]
+              : 3600,
+          );
         }
 
         try {

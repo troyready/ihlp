@@ -181,7 +181,7 @@ module.exports = ihlpConfig;
 
   const tfConfig = `terraform {
   backend "s3" {
-    key    = "example.tfstate"
+    key = "example.tfstate"
   }
 
   required_providers {

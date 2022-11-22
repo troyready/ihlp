@@ -4,6 +4,8 @@
  * @packageDocumentation
  */
 
+import { AssumeRoleCommand, STSClient } from "@aws-sdk/client-sts";
+import { Credentials } from "@aws-sdk/types";
 import { create as createArchive } from "archiver";
 import * as chalk from "chalk";
 import * as crypto from "crypto";
@@ -28,6 +30,32 @@ import { Serverless } from "./runners/serverless";
 import { SyncToRemoteStorage } from "./runners/synctoremotestorage";
 import { Terraform } from "./runners/terraform";
 import type { Block, IHLPConfig } from "./config";
+
+/** Assume AWS IAM Role */
+export async function assumeAWSRole(
+  roleArn: string,
+  roleSessionName: string,
+  region = "us-east-1",
+  durationSeconds = 3600,
+): Promise<Credentials> {
+  const stsClient = new STSClient({ region: region });
+  const assumeRoleOutput = await stsClient.send(
+    new AssumeRoleCommand({
+      RoleArn: roleArn,
+      RoleSessionName: roleSessionName,
+      DurationSeconds: durationSeconds,
+    }),
+  );
+  return {
+    accessKeyId: assumeRoleOutput.Credentials?.AccessKeyId
+      ? assumeRoleOutput.Credentials?.AccessKeyId
+      : "",
+    secretAccessKey: assumeRoleOutput.Credentials?.SecretAccessKey
+      ? assumeRoleOutput.Credentials?.SecretAccessKey
+      : "",
+    sessionToken: assumeRoleOutput.Credentials?.SessionToken,
+  };
+}
 
 /** Download S3 object to local file */
 export async function downloadS3ObjectToFile(

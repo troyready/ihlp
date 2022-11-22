@@ -125,6 +125,12 @@ export interface DeleteResourceGroupOnDestroyBlock extends Block {
 
 /** Block options for a CloudFormation stack */
 export interface CfnStackOpts {
+  /** ARN of IAM Role to assume for AWS API calls */
+  assumeRoleArn?: string;
+  /** Number of seconds for which the assumed role credentials will be vaild */
+  assumeRoleDuration?: number;
+  /** Session name for assumed role */
+  assumeRoleSessionName?: string;
   /** Name of the CFN stack */
   stackName: string;
   /** Parameters for the CFN stack */
@@ -254,6 +260,12 @@ export interface FunctionBuilderGoBlock extends Block {
 
 /** Block options for emptying AWS S3 buckets on destroy */
 export interface EmptyAwsS3BucketsOpts {
+  /** ARN of IAM Role to assume for AWS API calls */
+  assumeRoleArn?: string;
+  /** Number of seconds for which the assumed role credentials will be vaild */
+  assumeRoleDuration?: number;
+  /** Session name for assumed role */
+  assumeRoleSessionName?: string;
   /** List of AWS S3 buckets to empty (comma-separated or regular array) */
   bucketNames: string[] | string;
 }
