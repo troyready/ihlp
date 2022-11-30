@@ -8,7 +8,7 @@ import * as path from "path";
 import { spawnSync } from "child_process";
 
 import type { ServerlessBlock, ActionName } from "../../config";
-import { logErrorRed, logGreen, pathExists } from "../../util";
+import { assumeAWSRole, logErrorRed, logGreen, pathExists } from "../../util";
 import { getNpmBinaryName, getNpxBinaryName } from "../util";
 import { Runner } from "../";
 
@@ -35,8 +35,26 @@ export class Serverless extends Runner {
       process.chdir(this.block.path);
       const npmBinary = await getNpmBinaryName();
 
+      const env: NodeJS.ProcessEnv = { ...process.env };
+      if (this.block.options?.assumeRoleArn) {
+        const assumeRoleCreds = await assumeAWSRole(
+          this.block.options.assumeRoleArn,
+          this.block.options.assumeRoleSessionName
+            ? this.block.options.assumeRoleSessionName
+            : "ihlp",
+          this.location,
+          this.block.options.assumeRoleDuration,
+        );
+        env["AWS_ACCESS_KEY_ID"] = assumeRoleCreds.accessKeyId;
+        env["AWS_SECRET_ACCESS_KEY"] = assumeRoleCreds.secretAccessKey;
+        env["AWS_SESSION_TOKEN"] = assumeRoleCreds.sessionToken;
+      }
+
       logGreen("Running 'npm ci'");
-      let exitCode = spawnSync(npmBinary, ["ci"], { stdio: "inherit" }).status;
+      let exitCode = spawnSync(npmBinary, ["ci"], {
+        env: env,
+        stdio: "inherit",
+      }).status;
       if (exitCode != 0) {
         process.exit(exitCode ? exitCode : 1);
       }
@@ -58,6 +76,7 @@ export class Serverless extends Runner {
         )}"`,
       );
       exitCode = spawnSync(slsCommand[0], [...slsCommand].slice(1), {
+        env: env,
         stdio: "inherit",
       }).status;
       if (exitCode != 0) {
