@@ -13,6 +13,7 @@ import { awsTfEksFluxV2 } from "./aws_tf_eks_fluxv2";
 import { awsTfGoLambda } from "./aws_tf_go_lambda";
 import { awsTfNodeLambda } from "./aws_tf_node_lambda";
 import { awsTfWithS3Backend } from "./aws_tf_s3_backend";
+import { awsTfStaticSite } from "./aws_tf_static_site";
 import { azureTfWithArmBackend } from "./azure_tf_azurerm_backend";
 import { gcpTfWithGCSBackend } from "./gcp_tf_gcs_backend";
 import { bareBones } from "./barebones";
@@ -137,6 +138,10 @@ export async function init(): Promise<void> {
     {
       name: "(AWS) Terraform-managed EKS with FluxV2",
       worker: awsTfEksFluxV2,
+    },
+    {
+      name: "(AWS) Terraform deploying static website to S3 and CloudFront",
+      worker: awsTfStaticSite,
     },
     {
       name: "(AWS) Serverless Framework",

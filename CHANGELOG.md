@@ -5,6 +5,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Fixed
+- sync-to-remote-storage runner will no longer try to invalidate 0 CloudFront paths
+- serverless init generator errors when tmp storage is mounted on a different filesystem
+
+### Added
+- IAM Role assumption support for Serverless runner (e.g. deploying CFN stack)
+- Init generator for AWS static site
 
 ## [0.8.0] - 2022-11-22
 ### Added

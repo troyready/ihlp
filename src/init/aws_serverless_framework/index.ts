@@ -6,6 +6,7 @@
 
 import * as admzip from "adm-zip";
 import * as fs from "fs";
+import * as fse from "fs-extra";
 import * as path from "path";
 import * as tmp from "tmp-promise";
 import { generateGitIgnore, generateTsconfig } from "../";
@@ -62,10 +63,7 @@ module.exports = ihlpConfig;
     );
     const dlZip = new admzip(dlPath);
     dlZip.extractAllTo(tmpDir.path);
-    await fs.promises.rename(
-      path.join(tmpDir.path, "git-lfs-s3-main"),
-      slsProjectPath,
-    );
+    await fse.move(path.join(tmpDir.path, "git-lfs-s3-main"), slsProjectPath);
   }
   logGreen("Example generation complete");
 }

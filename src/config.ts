@@ -277,9 +277,20 @@ export interface EmptyS3BucketsOnDestroyBlock extends Block {
   type: "aws-empty-s3-buckets-on-destroy";
 }
 
+/** Block options for Serveless Framework */
+export interface ServerlessOpts {
+  /** ARN of IAM Role to assume for AWS API calls */
+  assumeRoleArn?: string;
+  /** Number of seconds for which the assumed role credentials will be vaild */
+  assumeRoleDuration?: number;
+  /** Session name for assumed role */
+  assumeRoleSessionName?: string;
+}
+
 /** Block definition for Serverless Framework */
 export interface ServerlessBlock extends Block {
   name?: string;
+  options?: ServerlessOpts;
   /** Path to directory containing the Serverless Framework project */
   path: string;
   type: "serverless-framework";

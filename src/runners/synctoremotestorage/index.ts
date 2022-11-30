@@ -178,7 +178,7 @@ export class SyncToRemoteStorage extends Runner {
           currentBuildDir,
         );
       }
-      if (pathsToInvalidate) {
+      if (pathsToInvalidate && pathsToInvalidate.length > 0) {
         logGreen(
           `Invalidating CloudFront distribution ${this.block.options.postSync.cfInvalidation.distributionID}'s paths:`,
         );
