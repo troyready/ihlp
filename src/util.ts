@@ -215,7 +215,9 @@ export async function httpsGetToFile(
         writeStream.close();
         fs.unlink(filePath, () => {}); // eslint-disable-line @typescript-eslint/no-empty-function
         reject(
-          `Instead of 200, code ${response.statusCode} (${response.statusMessage})`,
+          new Error(
+            `Received unexpected HTTP status code ${response.statusCode} (${response.statusMessage})`,
+          ),
         );
       }
     });
