@@ -9,6 +9,7 @@ import compareVersions from "compare-versions";
 import { FollowOptions } from "follow-redirects";
 import * as fs from "fs";
 import { RequestOptions } from "https";
+import { NetRC } from "netrc-reader";
 import * as os from "os";
 import * as path from "path";
 import * as readline from "readline";
@@ -83,26 +84,56 @@ async function downloadVersion(
   try {
     const downloadFilename = `terraform_${version}_${tfPlatform}.zip`;
     const sha256sumsFilename = `terraform_${version}_SHA256SUMS`;
-    const baseDownloadUrl = `${
-      process.env.TFENV_REMOTE
-        ? process.env.TFENV_REMOTE
-        : "https://releases.hashicorp.com"
-    }/terraform/${version}/`;
 
     const downloadArchiveFullPath = path.join(tmpDir.path, downloadFilename);
-    const archiveDownloadOpts = new URL(
-      baseDownloadUrl + downloadFilename,
-    ) as FollowOptions<RequestOptions>;
-    archiveDownloadOpts.maxBodyLength = 50 * 1024 * 1024;
+    const archiveDownloadOpts: RequestOptions = {
+      host: process.env.TFENV_REMOTE
+        ? new URL(process.env.TFENV_REMOTE).host
+        : "releases.hashicorp.com",
+      path: process.env.TFENV_REMOTE
+        ? `${
+            new URL(process.env.TFENV_REMOTE).pathname
+          }/terraform/${version}/${downloadFilename}`
+        : `/terraform/${version}/${downloadFilename}`,
+    };
+    (archiveDownloadOpts as FollowOptions<RequestOptions>).maxBodyLength =
+      150 * 1024 * 1024;
+
+    const sha256sumsDownloadOpts: RequestOptions = {
+      host: process.env.TFENV_REMOTE
+        ? new URL(process.env.TFENV_REMOTE).host
+        : "releases.hashicorp.com",
+      path: process.env.TFENV_REMOTE
+        ? `${
+            new URL(process.env.TFENV_REMOTE).pathname
+          }/terraform/${version}/${sha256sumsFilename}`
+        : `/terraform/${version}/${sha256sumsFilename}`,
+    };
+
+    if (process.env.TFENV_NETRC_PATH) {
+      const netrc = new NetRC(process.env.TFENV_NETRC_PATH);
+      await netrc.load();
+      const machine = netrc.getConfig(archiveDownloadOpts.host!);
+      if (machine && machine.login && machine.password) {
+        logGreen(
+          "Using netrc credentials for Terraform downloads host " +
+            archiveDownloadOpts.host,
+        );
+        archiveDownloadOpts.auth = machine.login + ":" + machine.password;
+        sha256sumsDownloadOpts.auth = machine.login + ":" + machine.password;
+      } else {
+        logGreen(
+          "Terraform URL credentials file specified but credentials not found",
+        );
+      }
+    }
+
     await httpsGetToFile(archiveDownloadOpts, downloadArchiveFullPath);
     const downloadSha256sumsFullPath = path.join(
       tmpDir.path,
       sha256sumsFilename,
     );
-    await httpsGetToFile(
-      baseDownloadUrl + sha256sumsFilename,
-      downloadSha256sumsFullPath,
-    );
+    await httpsGetToFile(sha256sumsDownloadOpts, downloadSha256sumsFullPath);
 
     const expectedDownloadFileSha256Hash = await getFileHashFromShaSumsFile(
       downloadFilename,
