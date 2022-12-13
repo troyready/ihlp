@@ -329,7 +329,10 @@ data "aws_iam_policy_document" "hello_world_lambda_role_policy" {
     actions = [
       "logs:CreateLogGroup",
       "logs:CreateLogStream",
+      "logs:ListTagsForResource",
       "logs:PutLogEvents",
+      "logs:TagResource",
+      "logs:UntagResource",
     ]
 
     resources = [
