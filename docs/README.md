@@ -33,6 +33,102 @@ The initialization process will have you choose a starter template. Custom it an
   * Use of [Workspaces](https://www.terraform.io/docs/language/state/workspaces.html)
   * Retrieving any [module updates](https://www.terraform.io/docs/cli/commands/get.html#update) before plan/apply
 
+## Supported Deployment Systems
+
+* AWS CloudFormation (CFN) / Serverless Application Repository (SAR)
+* Azure Resource Manager (ARM)
+* GCP Deployment Manager
+* Serverless Framework
+* Terraform
+
+### AWS CloudFormation (CFN) / Serverless Application Repository (SAR)
+
+#### AWS CloudFormation
+
+Here's a basic IHLP `ihlp.ts` deploying a CloudFormation stack:
+```
+import type { IHLPConfig } from "ihlp/lib/config";
+
+const envOptions = {
+  dev: {
+    namespace: "dev",
+    someParam: "foo",
+    tags: {
+      environment: "dev",
+      namespace: "dev-app",
+    },
+  },
+};
+
+const ihlpConfig: IHLPConfig = {
+  deployments: [
+    {
+      blocks: [
+        {
+          options: {
+            stackName: `${envOptions[process.env.IHLP_ENV].namespace}-stack-a`,
+            stackParameters: {
+              SomeParam: envOptions[process.env.IHLP_ENV].someParam
+            },
+            stackTags: envOptions[process.env.IHLP_ENV].tags,
+            templatePath: "./cfn-templates/app-stack-a.yml",
+          },
+          type: "aws-cfn-stack",
+        },
+      ],
+      locations: ["us-west-2"],
+    },
+  ],
+};
+
+module.exports = ihlpConfig;
+```
+
+When running in the `dev` environment (e.g. `npx ihlp deploy -e dev`), the stack `dev-app-stack-a` will be deployed from the template on-disk at `./cfn-templates/app-stack-a.yml` with parameter `SomeParam` set to `foo`.
+
+#### AWS Serverless Application Repository (SAR)
+
+Applications available in the [Serverless Application Repository](https://aws.amazon.com/serverless/serverlessrepo/) can be deployed like regular CloudFormation stacks; simply substitute an `applicationId` in place of the `templatePath`:
+```
+import type { IHLPConfig } from "ihlp/lib/config";
+
+const envOptions = {
+  dev: {
+    namespace: "dev",
+    appVersion: "1.0.0",
+    tags: {
+      environment: "dev",
+      namespace: "dev-app",
+    },
+  },
+};
+
+const ihlpConfig: IHLPConfig = {
+  deployments: [
+    {
+      blocks: [
+        {
+          options: {
+            applicationId: "arn:aws:serverlessrepo:us-east-2:012345678901:applications/example",
+            applicationVersion: envOptions[process.env.IHLP_ENV].appVersion,
+            stackName: `${envOptions[process.env.IHLP_ENV].namespace}-stack-a`,
+            stackParameters: {
+              SomeParam: envOptions[process.env.IHLP_ENV].someParam
+            },
+            stackTags: envOptions[process.env.IHLP_ENV].tags,
+          },
+          type: "aws-cfn-stack",
+        },
+      ],
+      locations: ["us-west-2"],
+    },
+  ],
+};
+
+module.exports = ihlpConfig;
+```
+When running in the `dev` environment (e.g. `npx ihlp deploy -e dev`), the stack `serverlessrepo-dev-app-stack-a` will be deployed from the SAR app `arn:aws:serverlessrepo:us-east-2:012345678901:applications/example` with parameter `SomeParam` set to `foo`.
+
 ## FAQ
 
 ### Disabling Color in Logging

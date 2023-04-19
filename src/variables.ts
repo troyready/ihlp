@@ -94,7 +94,7 @@ async function resolveVar(
       {
         const opts = {};
         const cfnClientOpts: CloudFormationClientConfig = {};
-        const cfnClientCredOpts = {};
+        const cfnClientCredOpts: Record<string, any> = {};
 
         for (const opt of varArg.split(",")) {
           if (opt.startsWith("stack=")) {
@@ -120,7 +120,12 @@ async function resolveVar(
           cfnClientOpts["region"] = process.env["IHLP_LOCATION"];
         }
 
-        if ("arn" in cfnClientCredOpts) {
+        if (cfnClientCredOpts.arn) {
+          if (verboseLogging) {
+            logGreen(
+              `Assuming AWS role ${cfnClientCredOpts["arn"]} to describe CFN stack...`,
+            );
+          }
           cfnClientOpts.credentials = await assumeAWSRole(
             cfnClientCredOpts["arn"],
             "sessionName" in cfnClientCredOpts
@@ -178,17 +183,46 @@ async function resolveVar(
       {
         const opts = {};
         const ssmClientOpts: SSMClientConfig = {};
+        const ssmClientCredOpts: Record<string, any> = {};
 
         for (const opt of varArg.split(",")) {
           if (opt.startsWith("name=")) {
             opts["Name"] = opt.split("name=")[1];
           } else if (opt.startsWith("region=")) {
             ssmClientOpts["region"] = opt.split("region=")[1];
+          } else if (opt.startsWith("assumerolearn=")) {
+            ssmClientCredOpts["arn"] = opt.split("assumerolearn=")[1];
+          } else if (opt.startsWith("assumerolesessionname=")) {
+            ssmClientCredOpts["sessionName"] = opt.split(
+              "assumerolesessionname=",
+            )[1];
+          } else if (opt.startsWith("assumeroleduration=")) {
+            ssmClientCredOpts["duration"] = Number(
+              opt.split("assumeroleduration=")[1],
+            );
           }
         }
 
         if (!("region" in ssmClientOpts)) {
           ssmClientOpts["region"] = process.env["IHLP_LOCATION"];
+        }
+
+        if (ssmClientCredOpts.arn) {
+          if (verboseLogging) {
+            logGreen(
+              `Assuming AWS role ${ssmClientCredOpts["arn"]} to retrieve SSM parameter...`,
+            );
+          }
+          ssmClientOpts.credentials = await assumeAWSRole(
+            ssmClientCredOpts["arn"],
+            "sessionName" in ssmClientCredOpts
+              ? ssmClientCredOpts["sessionName"]
+              : "ihlp",
+            ssmClientCredOpts["region"],
+            "duration" in ssmClientCredOpts
+              ? ssmClientCredOpts["duration"]
+              : 3600,
+          );
         }
 
         try {
