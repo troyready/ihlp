@@ -125,6 +125,10 @@ export interface DeleteResourceGroupOnDestroyBlock extends Block {
 
 /** Block options for a CloudFormation stack */
 export interface CfnStackOpts {
+  /** ARN of the SAR application (specify this or templatePath) */
+  applicationId?: string;
+  /** SAR application version */
+  applicationVersion?: string;
   /** ARN of IAM Role to assume for AWS API calls */
   assumeRoleArn?: string;
   /** Number of seconds for which the assumed role credentials will be vaild */
@@ -137,8 +141,8 @@ export interface CfnStackOpts {
   stackParameters?: Record<string, string>;
   /** Tags for the CFN stack */
   stackTags?: Record<string, string>;
-  /** Path to the CFN template */
-  templatePath: string;
+  /** Path to the CFN template (specify this or applicationId) */
+  templatePath?: string;
 }
 
 /** Block definition for a CloudFormation stack */

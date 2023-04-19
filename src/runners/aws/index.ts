@@ -15,6 +15,7 @@ import {
   DescribeChangeSetCommand,
   DescribeStacksCommand,
   ExecuteChangeSetCommand,
+  waitUntilStackDeleteComplete,
 } from "@aws-sdk/client-cloudformation";
 import {
   S3Client,
@@ -23,6 +24,11 @@ import {
   DeleteObjectCommandOutput,
   ListObjectVersionsCommand,
 } from "@aws-sdk/client-s3";
+import {
+  CreateCloudFormationChangeSetCommand,
+  CreateCloudFormationChangeSetCommandInput,
+  ServerlessApplicationRepositoryClient,
+} from "@aws-sdk/client-serverlessapplicationrepository";
 import { v4 as uuidv4 } from "uuid";
 
 import type {
@@ -40,7 +46,19 @@ export class AwsCfnStack extends Runner {
 
   /** Process IHLP command for AWS CloudFormation stack */
   async action(actionName: ActionName): Promise<void> {
-    const changeSetInput = await getChangeSetInput(this.block.options);
+    if (!this.block.options.templatePath && !this.block.options.applicationId) {
+      logErrorRed(
+        'Must specify either "templatePath" (for a regular CFN stack) or "applicationId" (for a SAR app)',
+      );
+    }
+
+    const stackName = this.block.options.applicationId
+      ? `serverlessrepo-` + this.block.options.stackName
+      : this.block.options.stackName;
+    let stackExists = true; // assume it exists until we describe stacks and confirm it doesn't
+    const changeSetInput = this.block.options.applicationId
+      ? getSarAppChangeSetInput(this.block.options)
+      : await getChangeSetInput(this.block.options);
     const cfnClientConfig: CloudFormationClientConfig = {
       region: this.location,
     };
@@ -55,26 +73,23 @@ export class AwsCfnStack extends Runner {
       );
     }
     const cfnClient = new CloudFormationClient(cfnClientConfig);
+    const sarClient = new ServerlessApplicationRepositoryClient(
+      cfnClientConfig,
+    );
 
     try {
-      await cfnClient.send(
-        new DescribeStacksCommand({ StackName: changeSetInput["StackName"] }),
-      );
+      await cfnClient.send(new DescribeStacksCommand({ StackName: stackName }));
 
       // No error thrown during describe indicates an existing stack
       if (actionName == "deploy") {
-        logGreen(
-          `Updating CFN stack "${changeSetInput["StackName"]}" via ChangeSet`,
-        );
+        logGreen(`Updating CFN stack "${stackName}" via ChangeSet`);
       }
     } catch (error) {
       if (error.name == "ValidationError") {
         if (actionName == "deploy") {
-          logGreen(
-            `Creating new CFN stack "${changeSetInput["StackName"]}" via ChangeSet...`,
-          );
+          logGreen(`Creating new CFN stack "${stackName}" via ChangeSet...`);
         }
-        changeSetInput["ChangeSetType"] = "CREATE";
+        stackExists = false;
       } else if (error.name == "CredentialsProviderError") {
         logErrorRed(
           "Credentials error occured when accessing AWS - please check credentials and try again",
@@ -88,20 +103,16 @@ export class AwsCfnStack extends Runner {
       if (this.options.verbose) {
         logGreen("Creating ChangeSet...");
       }
-      const createChangeSetResponse = await cfnClient.send(
-        new CreateChangeSetCommand(changeSetInput),
+      const changeSetId = await createChangeSet(
+        cfnClient,
+        sarClient,
+        changeSetInput,
+        stackExists,
       );
-
-      if (!createChangeSetResponse.Id) {
-        logErrorRed(
-          "CFN did not return expected result when creating ChangeSet",
-        );
-        process.exit(1);
-      }
 
       const changeSetNeededAndReady = await waitForChangeSetCreateComplete(
         cfnClient,
-        createChangeSetResponse.Id,
+        changeSetId,
         this.options.verbose,
       );
 
@@ -111,36 +122,65 @@ export class AwsCfnStack extends Runner {
         }
         await cfnClient.send(
           new ExecuteChangeSetCommand({
-            ChangeSetName: createChangeSetResponse.Id,
-            StackName: changeSetInput["StackName"],
+            ChangeSetName: changeSetId,
+            StackName: stackName,
           }),
         );
 
         await waitForStackCreateOrUpdateComplete(
           cfnClient,
-          changeSetInput.StackName as string,
+          stackName,
           this.options.verbose,
         );
       }
     } else if (actionName == "destroy") {
-      if (changeSetInput["ChangeSetType"] == "CREATE") {
+      if (!stackExists) {
         console.log();
         logGreen("CFN stack has already been deleted");
         console.log();
       } else {
-        logGreen("Destroying stack " + changeSetInput["StackName"]);
-        await cfnClient.send(
-          new DeleteStackCommand({ StackName: changeSetInput["StackName"] }),
-        );
+        logGreen("Destroying stack " + stackName);
+        await cfnClient.send(new DeleteStackCommand({ StackName: stackName }));
         logGreen("Waiting for stack deletion to complete");
-        await waitForStackDeleteComplete(
-          cfnClient,
-          changeSetInput.StackName as string,
-          this.options.verbose,
+        await waitUntilStackDeleteComplete(
+          { client: cfnClient, maxWaitTime: 3600 },
+          { StackName: stackName },
         );
       }
     }
   }
+}
+
+/** Create CloudFormation ChangeSet */
+async function createChangeSet(
+  cfnClient: CloudFormationClient,
+  sarClient: ServerlessApplicationRepositoryClient,
+  changeSetInput:
+    | CreateCloudFormationChangeSetCommandInput
+    | CreateChangeSetCommandInput,
+  stackExists: boolean,
+): Promise<string> {
+  let changeSetId: string | undefined;
+
+  if ("ApplicationId" in changeSetInput) {
+    const createChangeSetResponse = await sarClient.send(
+      new CreateCloudFormationChangeSetCommand(changeSetInput),
+    );
+    changeSetId = createChangeSetResponse.ChangeSetId;
+  } else {
+    if (!stackExists) {
+      changeSetInput["ChangeSetType"] = "CREATE";
+    }
+    const createChangeSetResponse = await cfnClient.send(
+      new CreateChangeSetCommand(changeSetInput),
+    );
+    changeSetId = createChangeSetResponse.Id;
+  }
+  if (changeSetId === undefined) {
+    logErrorRed("CFN did not return expected result when creating ChangeSet");
+    process.exit(1);
+  }
+  return changeSetId;
 }
 
 /** Generate CloudFormation ChangeSet API options */
@@ -155,7 +195,7 @@ async function getChangeSetInput(
     ],
     ChangeSetName: options.stackName + uuidv4(),
     StackName: options.stackName,
-    TemplateBody: await fs.promises.readFile(options.templatePath, "utf8"),
+    TemplateBody: await fs.promises.readFile(options.templatePath!, "utf8"),
   };
 
   if (options.stackTags) {
@@ -176,9 +216,43 @@ async function getChangeSetInput(
   return changeSetInput;
 }
 
-// TODO: most of these wait functions should be replaced with the built-in SDK waiters
-// https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/clients/client-cloudformation/index.html
-// https://github.com/aws/aws-sdk-js-v3/issues/2169
+/** Generate CloudFormation ChangeSet API options for SAR stack */
+function getSarAppChangeSetInput(
+  options: CfnStackOpts,
+): CreateCloudFormationChangeSetCommandInput {
+  const changeSetInput = {
+    ApplicationId: options.applicationId,
+    Capabilities: [
+      "CAPABILITY_AUTO_EXPAND",
+      "CAPABILITY_IAM",
+      "CAPABILITY_NAMED_IAM",
+      "CAPABILITY_RESOURCE_POLICY",
+    ],
+    ChangeSetName: options.stackName + uuidv4(),
+    StackName: options.stackName,
+  };
+
+  if (options.applicationVersion) {
+    changeSetInput["SemanticVersion"] = options.applicationVersion;
+  }
+
+  if (options.stackTags) {
+    changeSetInput["Tags"] = [];
+    for (const [key, value] of Object.entries(options.stackTags)) {
+      changeSetInput["Tags"].push({ Key: key, Value: value });
+    }
+  }
+  if (options.stackParameters) {
+    changeSetInput["ParameterOverrides"] = [];
+    for (const [key, value] of Object.entries(options.stackParameters)) {
+      changeSetInput["ParameterOverrides"].push({
+        Name: key,
+        Value: value,
+      });
+    }
+  }
+  return changeSetInput;
+}
 
 /** Wait for CloudFormation ChangeSet creation to complete */
 async function waitForChangeSetCreateComplete(
@@ -200,6 +274,9 @@ async function waitForChangeSetCreateComplete(
       if (
         describeChangeSetResponse.StatusReason?.includes(
           "didn't contain changes",
+        ) ||
+        describeChangeSetResponse.StatusReason?.includes(
+          "No updates are to be performed",
         )
       ) {
         logGreen("ChangeSet contains no updates");
@@ -291,55 +368,6 @@ async function waitForStackCreateOrUpdateComplete(
         );
       }
       await new Promise((r) => setTimeout(r, 10000)); // sleep 10 sec
-    }
-  } while (stackDone == false);
-}
-
-/** Wait for CloudFormation Stack to finish deleting */
-async function waitForStackDeleteComplete(
-  cfnClient: CloudFormationClient,
-  stackName: string,
-  verbose = false,
-): Promise<void> {
-  let stackDone = false;
-  do {
-    if (verbose) {
-      logGreen("Describing stack...");
-    }
-    try {
-      const describeStacksCommandResponse = await cfnClient.send(
-        new DescribeStacksCommand({ StackName: stackName }),
-      );
-      if (!describeStacksCommandResponse.Stacks) {
-        logGreen("CFN does not have record of stack; deletion complete");
-        stackDone = true;
-      } else if (
-        describeStacksCommandResponse.Stacks[0].StackStatus == "DELETE_COMPLETE"
-      ) {
-        logGreen("Stack deletion complete");
-        stackDone = true;
-      } else if (
-        describeStacksCommandResponse.Stacks[0].StackStatus == "DELETE_FAILED"
-      ) {
-        logErrorRed(
-          `Stack deletion errored: ${describeStacksCommandResponse.Stacks[0].StackStatusReason}`,
-        );
-        process.exit(1);
-      } else {
-        if (verbose) {
-          logGreen(
-            "Stack still deleting; waiting 10 seconds before checking again...",
-          );
-        }
-        await new Promise((r) => setTimeout(r, 10000)); // sleep 10 sec
-      }
-    } catch (error) {
-      if (error.name == "ValidationError") {
-        logGreen("Stack deletion complete");
-        stackDone = true;
-      } else {
-        throw error;
-      }
     }
   } while (stackDone == false);
 }
