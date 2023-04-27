@@ -7,7 +7,6 @@
       "module": "commonjs",
       "moduleResolution": "node",
       "outDir": "lib",
-      "removeComments": true,
       "rootDirs": [
         "src"
       ],
