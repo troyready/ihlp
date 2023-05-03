@@ -174,12 +174,34 @@ export class EsbuildFunctions extends Runner {
         npmCIRun = true;
       }
 
+      let entryPoint: string;
+      if (!this.block.options?.entryPoint) {
+        if (
+          await pathExists(
+            this.block.options?.srcDir
+              ? path.join(
+                  this.block.path,
+                  this.block.options.srcDir,
+                  dirName,
+                  "handler.mts",
+                )
+              : path.join(this.block.path, dirName, "handler.mts"),
+          )
+        ) {
+          entryPoint = "handler.mts";
+        } else {
+          entryPoint = "handler.ts";
+        }
+      } else {
+        entryPoint = this.block.options.entryPoint;
+      }
+
       const fullyQualifiedZipfilename = await this.buildAndZip(
         dirName,
         this.block.options?.srcDir,
         this.block.options?.outDir,
         this.block.options?.target,
-        this.block.options?.entryPoint,
+        entryPoint,
       );
       if (this.block.options?.archiveCache?.s3Bucket) {
         logGreen(
