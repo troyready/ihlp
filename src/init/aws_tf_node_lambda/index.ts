@@ -394,7 +394,7 @@ resource "aws_lambda_function" "hello_world" {
     "@types/aws-lambda": "^8.10.83",
     "@types/jest": "^27.0.1",
     "@types/source-map-support": "^0.5.4",
-    "esbuild": "^0.12.24",
+    "esbuild": "^0.17.18",
     "jest": "^27.1.0",
     "ts-jest": "^27.0.5"
   },
