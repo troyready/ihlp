@@ -209,7 +209,7 @@ export interface EsbuildFunctionsBlockOpts extends BlockOpts {
    * Enabling this allows builds to be bypassed when rolling back a repo.
    */
   archiveCache?: ArchiveCacheAwsOpts;
-  /** Filename on which esbuild will run (defaults to `handler.ts`) */
+  /** Filename on which esbuild will run (defaults to `handler.ts` or `handler.mts` if present) */
   entryPoint?: string;
   /** Environment variables to set when running esbuild */
   envVars?: Record<string, string>;
