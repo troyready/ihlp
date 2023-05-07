@@ -1,15 +1,20 @@
 /**
- * Hello world handler
+ * Hello world handler testing top-level await
  *
  * @packageDocumentation
  */
 
+import { SSMClient, GetParameterCommand } from "@aws-sdk/client-ssm";
 import {
   APIGatewayProxyEvent,
   APIGatewayProxyHandler,
   APIGatewayProxyResult,
   Context,
 } from "aws-lambda";
+
+const paramName = process.env.SSM_PARAM_NAME || "";
+const ssmClient = new SSMClient({});
+const response = (await ssmClient.send(new GetParameterCommand({ Name: paramName}))).Parameter?.Value || "";
 
 /** Respond to incoming requests with hello world message */
 export const handler: APIGatewayProxyHandler = async (
@@ -31,7 +36,7 @@ export const handler: APIGatewayProxyHandler = async (
   }
 
   return {
-    body: JSON.stringify({ message: "Hello world" }),
+    body: JSON.stringify({ message: response }),
     statusCode: 200,
   };
 };

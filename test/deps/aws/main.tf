@@ -25,6 +25,16 @@ locals {
 data "aws_iam_policy_document" "boundary" {
   statement {
     actions = [
+      "ssm:GetParameter",
+    ]
+
+    resources = [
+      "arn:${data.aws_partition.current.partition}:ssm:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:parameter/${var.resource_prefix}*",
+    ]
+  }
+
+  statement {
+    actions = [
       "logs:CreateLogGroup",
       "logs:CreateLogStream",
       "logs:ListTagsForResource",
@@ -222,13 +232,27 @@ data "aws_iam_policy_document" "policy" {
 
   statement {
     actions = [
-      "ssm:DeleteParameter",
-      "ssm:GetParameter",
-      "ssm:PutParameter",
+      "ssm:DescribeParameters",
     ]
 
     resources = [
-      "arn:${data.aws_partition.current.partition}:dwssmlambda:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:parameter/${var.resource_prefix}*",
+      "*",
+    ]
+  }
+
+  statement {
+    actions = [
+      "ssm:AddTagsToResource",
+      "ssm:DeleteParameter",
+      "ssm:GetParameter",
+      "ssm:GetParameters",
+      "ssm:ListTagsForResource",
+      "ssm:PutParameter",
+      "ssm:RemoveTagsFromResource",
+    ]
+
+    resources = [
+      "arn:${data.aws_partition.current.partition}:ssm:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:parameter/${var.resource_prefix}*",
     ]
   }
 }

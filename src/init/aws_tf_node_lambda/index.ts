@@ -17,7 +17,8 @@ export async function awsTfNodeLambda(): Promise<void> {
 const envOptions = {
   dev: {
     namespace: "dev-ihlp-proj",
-    nodeVersion: "16",
+    nodeVersion: "18",
+    sourcesContent: true,
     tags: {
       environment: "dev",
       namespace: "dev-ihlp-proj",
@@ -26,7 +27,8 @@ const envOptions = {
   },
   prod: {
     namespace: "prod-ihlp-proj",
-    nodeVersion: "16",
+    nodeVersion: "18",
+    sourcesContent: false,
     tags: {
       environment: "prod",
       namespace: "prod-ihlp-proj",
@@ -64,6 +66,7 @@ const ihlpConfig: IHLPConfig = {
               }-tf-state,output=BucketName}\`,
               s3Prefix: \`\${process.env.IHLP_ENV}/exampleFunctions/\`,
             },
+            sourcesContent: envOptions[process.env.IHLP_ENV].sourcesContent,
             srcDir: "src",
             outDir: "dist",
             target: \`node\${envOptions[process.env.IHLP_ENV].nodeVersion}\`,
@@ -219,7 +222,6 @@ import {
   APIGatewayProxyResult,
   Context,
 } from "aws-lambda";
-import "source-map-support/register";
 
 /** Respond to incoming requests with hello world message */
 export const handler: APIGatewayProxyHandler = async (
@@ -393,13 +395,9 @@ resource "aws_lambda_function" "hello_world" {
   "devDependencies": {
     "@types/aws-lambda": "^8.10.83",
     "@types/jest": "^27.0.1",
-    "@types/source-map-support": "^0.5.4",
     "esbuild": "^0.17.18",
     "jest": "^27.1.0",
     "ts-jest": "^27.0.5"
-  },
-  "dependencies": {
-    "source-map-support": "^0.5.19"
   }
 }
 `;

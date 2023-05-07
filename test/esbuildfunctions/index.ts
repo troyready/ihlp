@@ -12,7 +12,7 @@ import { InvokeCommand, LambdaClient } from "@aws-sdk/client-lambda";
 import { TextDecoder, TextEncoder } from "util";
 import { spawnSync } from "child_process";
 
-const expecteFunctionResponse =
+const expectedFunctionResponse =
   '{"body":"{\\"message\\":\\"Hello world\\"}","statusCode":200}';
 const distPath = path.join("example.tf", "dist");
 const helloWorldZipPath = path.join(distPath, "helloWorld.zip");
@@ -51,8 +51,10 @@ export async function esbuildFunctionsTest(): Promise<void> {
     if (exitCode == 0) {
       console.log("Deploy successful; testing it");
       const functionName = env + "-hello-world";
+      const esmFunctionName = env + "-esm-hello-world";
       const lambdaClient = new LambdaClient({ region: "us-west-2" });
-      let lambdaResponsePayload = "";
+      let lambdaHelloWorldResponsePayload = "";
+      let lambdaESMResponsePayload = "";
       try {
         const lambdaResponse = await lambdaClient.send(
           new InvokeCommand({
@@ -62,12 +64,23 @@ export async function esbuildFunctionsTest(): Promise<void> {
             ),
           }),
         );
-        lambdaResponsePayload = new TextDecoder().decode(
+        lambdaHelloWorldResponsePayload = new TextDecoder().decode(
           lambdaResponse.Payload,
+        );
+        const lambdaESMResponse = await lambdaClient.send(
+          new InvokeCommand({
+            FunctionName: esmFunctionName,
+            Payload: new TextEncoder().encode(
+              JSON.stringify({ body: JSON.stringify({ foo: "bar" }) }),
+            ),
+          }),
+        );
+        lambdaESMResponsePayload = new TextDecoder().decode(
+          lambdaESMResponse.Payload,
         );
         console.log("Test successful; destroying it");
       } catch (error) {
-        console.error("Error encountered when testing deployed function:");
+        console.error("Error encountered when testing deployed functions:");
         console.error(JSON.stringify(error));
         console.log("Destroying deployment");
       }
@@ -78,10 +91,16 @@ export async function esbuildFunctionsTest(): Promise<void> {
         console.error("Error encountered while destroying test resources");
         process.exit(exitCode ? exitCode : 1);
       }
-      if (lambdaResponsePayload != expecteFunctionResponse) {
+      if (lambdaHelloWorldResponsePayload != expectedFunctionResponse) {
         console.error("Function did not return expected response");
-        console.error("Expected: " + expecteFunctionResponse);
-        console.error("Received: " + lambdaResponsePayload);
+        console.error("Expected: " + expectedFunctionResponse);
+        console.error("Received: " + lambdaHelloWorldResponsePayload);
+        process.exit(exitCode ? exitCode : 1);
+      }
+      if (lambdaESMResponsePayload != expectedFunctionResponse) {
+        console.error("ESM Function did not return expected response");
+        console.error("Expected: " + expectedFunctionResponse);
+        console.error("Received: " + lambdaESMResponsePayload);
         process.exit(exitCode ? exitCode : 1);
       }
     } else {
