@@ -213,11 +213,19 @@ export interface EsbuildFunctionsBlockOpts extends BlockOpts {
   entryPoint?: string;
   /** Environment variables to set when running esbuild */
   envVars?: Record<string, string>;
+  /** esbuild `external` options (e.g. `@aws-sdk*`) */
+  externals?: string[];
+  /** esbuild `format` option (e.g. `esm`) */
+  format?: string;
   /** Path (relative to the base block path) where function zip files will be placed */
   outDir?: string;
+  /** esbuild `out-extensions` options (e.g. `.js=.mjs`) */
+  outExtensions?: string[];
+  /** esbuild `sources-content` option (defaults to `false`) */
+  sourcesContent?: boolean;
   /** Path (relative to the base block path) containing the function directories */
   srcDir?: string;
-  /** esbuild `target` option (e.g. `node14`) */
+  /** esbuild `target` option (e.g. `node18`) */
   target?: string;
   /** Override options for generating a tracking hash of the source files */
   sourceHashOpts?: HashElementOptions; // https://github.com/marc136/node-folder-hash#options

@@ -198,9 +198,15 @@ export class EsbuildFunctions extends Runner {
 
       const fullyQualifiedZipfilename = await this.buildAndZip(
         dirName,
+        this.block.options?.sourcesContent
+          ? this.block.options.sourcesContent
+          : false,
         this.block.options?.srcDir,
         this.block.options?.outDir,
         this.block.options?.target,
+        this.block.options?.format,
+        this.block.options?.externals,
+        this.block.options?.outExtensions,
         entryPoint,
       );
       if (this.block.options?.archiveCache?.s3Bucket) {
@@ -221,9 +227,13 @@ export class EsbuildFunctions extends Runner {
   /** Run esbuild and create zip file of generated directory */
   async buildAndZip(
     dirName: string,
+    sourcesContent: boolean,
     baseSrcDir: string | undefined,
     baseOutDir: string | undefined,
     target: string | undefined,
+    format: string | undefined,
+    externals: string[] | undefined,
+    outExtensions: string[] | undefined,
     entryPoint = "handler.ts",
   ): Promise<string> {
     const outputDir = baseOutDir ? path.join(baseOutDir, dirName) : dirName;
@@ -237,11 +247,29 @@ export class EsbuildFunctions extends Runner {
       "--outdir=" + outputDir,
       "--minify",
       "--sourcemap",
+      `--sources-content=${sourcesContent}`,
     ];
+
     if (target) {
       npxCommandArgs.push("--target=" + target);
       if (target.startsWith("node")) {
         npxCommandArgs.push("--platform=node");
+      }
+    }
+
+    if (format) {
+      npxCommandArgs.push("--format=" + format);
+    }
+
+    if (externals) {
+      for (const ext of externals) {
+        npxCommandArgs.push("--external:" + ext);
+      }
+    }
+
+    if (outExtensions) {
+      for (const ext of outExtensions) {
+        npxCommandArgs.push("--out-extension:" + ext);
       }
     }
 

@@ -5,7 +5,7 @@ if (!process.env.IHLP_ENV || !process.env.AWS_PERMISSIONS_BOUNDARY_ARN) {
   process.exit(1);
 }
 
-const nodeVersion = "16";
+const nodeVersion = "18";
 const tfStackName = `${process.env.IHLP_ENV}-tf-state`;
 const tags = {
   environment: process.env.IHLP_ENV,
@@ -39,6 +39,22 @@ const ihlpConfig: IHLPConfig = {
             },
             srcDir: "src",
             outDir: "dist",
+            target: `node${nodeVersion}`,
+          },
+          type: "esbuild-functions",
+        },
+        {
+          path: "example.tf",
+          options: {
+            archiveCache: {
+              s3Bucket: `\${aws-cfn-output stack=${tfStackName},output=BucketName}`,
+              s3Prefix: `${process.env.IHLP_ENV}/exampleFunctions/`,
+            },
+            externals: ["@aws-sdk*"],
+            format: "esm",
+            srcDir: "esmSrc",
+            outDir: "dist",
+            outExtensions: [".js=.mjs"],
             target: `node${nodeVersion}`,
           },
           type: "esbuild-functions",
