@@ -356,8 +356,9 @@ resource "aws_iam_role" "hello_world_lambda" {
 }
 
 resource "aws_cloudwatch_log_group" "hello_world_function" {
-  name = "/aws/lambda/\${local.hello_world_function_name}"
-  tags = var.tags
+  name              = "/aws/lambda/\${local.hello_world_function_name}"
+  retention_in_days = 365
+  tags              = var.tags
 }
 
 resource "aws_lambda_function" "hello_world" {

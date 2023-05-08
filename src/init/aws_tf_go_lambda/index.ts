@@ -373,8 +373,9 @@ resource "aws_iam_role" "function_lambda" {
 }
 
 resource "aws_cloudwatch_log_group" "function_lambda" {
-  name = "/aws/lambda/\${local.function_name}"
-  tags = var.tags
+  name              = "/aws/lambda/\${local.function_name}"
+  retention_in_days = 365
+  tags              = var.tags
 }
 
 resource "aws_lambda_function" "function" {
