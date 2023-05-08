@@ -6,7 +6,7 @@
     "node": ">=10.0"
   },
   "name": "ihlp",
-  "version": "0.10.0",
+  "version": "0.10.1",
   "dependencies": {
     "@aws-sdk/client-cloudformation": "^3.316.0",
     "@aws-sdk/client-cloudfront": "^3.316.0",
