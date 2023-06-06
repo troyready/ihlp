@@ -128,6 +128,11 @@ class IHLP {
       process.chdir(block.path);
       const tfSetupRes = await runner.tfSetup();
       const tfShellEnvVars = runner.addTfVarsToEnv(block.options.variables);
+      if (block.envVars) {
+        for (const key of Object.keys(block.envVars)) {
+          tfShellEnvVars[key] = block.envVars[key];
+        }
+      }
       if (tfSetupRes.tfVersionDir) {
         tfShellEnvVars.PATH =
           tfSetupRes.tfVersionDir + ":" + tfShellEnvVars.PATH;
