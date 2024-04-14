@@ -289,7 +289,7 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "~> 4.0"
+      version = "~> 5.32"
     }
   }
 }
@@ -313,8 +313,11 @@ locals {
   function_name = "\${terraform.workspace}-function"
 }
 
-data "aws_partition" "current" {}
-data "aws_caller_identity" "current" {}
+resource "aws_cloudwatch_log_group" "function_lambda" {
+  name              = "/aws/lambda/\${local.function_name}"
+  retention_in_days = 365
+  tags              = var.tags
+}
 
 data "aws_iam_policy_document" "lambda_role_assume_role_policy" {
   statement {
@@ -336,7 +339,6 @@ data "aws_iam_policy_document" "function_lambda_role_policy" {
   # Logging permissions
   statement {
     actions = [
-      "logs:CreateLogGroup",
       "logs:CreateLogStream",
       "logs:ListTagsForResource",
       "logs:PutLogEvents",
@@ -345,7 +347,7 @@ data "aws_iam_policy_document" "function_lambda_role_policy" {
     ]
 
     resources = [
-      "arn:\${data.aws_partition.current.partition}:logs:\${var.region}:\${data.aws_caller_identity.current.account_id}:log-group:/aws/lambda/\${local.function_name}*",
+      "\${aws_cloudwatch_log_group.function_lambda.arn}*"
     ]
   }
 
@@ -372,12 +374,6 @@ resource "aws_iam_role" "function_lambda" {
   }
 }
 
-resource "aws_cloudwatch_log_group" "function_lambda" {
-  name              = "/aws/lambda/\${local.function_name}"
-  retention_in_days = 365
-  tags              = var.tags
-}
-
 resource "aws_lambda_function" "function" {
   filename         = "./dist/function.zip"
   function_name    = local.function_name
@@ -391,9 +387,10 @@ resource "aws_lambda_function" "function" {
     var.function_architecture,
   ]
 
-  depends_on = [
-    aws_cloudwatch_log_group.function_lambda,
-  ]
+  logging_config {
+    log_format = "JSON"
+    log_group  = aws_cloudwatch_log_group.function_lambda.name
+  }
 }
 `;
 

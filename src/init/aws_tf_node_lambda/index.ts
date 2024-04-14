@@ -279,7 +279,7 @@ node_modules
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "~> 4.0"
+      version = "~> 5.32"
     }
   }
 }
@@ -307,8 +307,11 @@ locals {
   hello_world_function_name = "\${terraform.workspace}-hello-world"
 }
 
-data "aws_partition" "current" {}
-data "aws_caller_identity" "current" {}
+resource "aws_cloudwatch_log_group" "hello_world_function" {
+  name              = "/aws/lambda/\${local.hello_world_function_name}"
+  retention_in_days = 365
+  tags              = var.tags
+}
 
 data "aws_iam_policy_document" "lambda_role_assume_role_policy" {
   statement {
@@ -329,7 +332,6 @@ data "aws_iam_policy_document" "lambda_role_assume_role_policy" {
 data "aws_iam_policy_document" "hello_world_lambda_role_policy" {
   statement {
     actions = [
-      "logs:CreateLogGroup",
       "logs:CreateLogStream",
       "logs:ListTagsForResource",
       "logs:PutLogEvents",
@@ -338,7 +340,7 @@ data "aws_iam_policy_document" "hello_world_lambda_role_policy" {
     ]
 
     resources = [
-      "arn:\${data.aws_partition.current.partition}:logs:\${var.region}:\${data.aws_caller_identity.current.account_id}:log-group:/aws/lambda/\${local.hello_world_function_name}*",
+      "\${aws_cloudwatch_log_group.hello_world_function.arn}*",
     ]
   }
 }
@@ -353,12 +355,6 @@ resource "aws_iam_role" "hello_world_lambda" {
     name   = "lambda-permissions"
     policy = data.aws_iam_policy_document.hello_world_lambda_role_policy.json
   }
-}
-
-resource "aws_cloudwatch_log_group" "hello_world_function" {
-  name              = "/aws/lambda/\${local.hello_world_function_name}"
-  retention_in_days = 365
-  tags              = var.tags
 }
 
 resource "aws_lambda_function" "hello_world" {
@@ -376,9 +372,10 @@ resource "aws_lambda_function" "hello_world" {
     }
   }
 
-  depends_on = [
-    aws_cloudwatch_log_group.hello_world_function,
-  ]
+  logging_config {
+    log_format = "JSON"
+    log_group  = aws_cloudwatch_log_group.hello_world_function.name
+  }
 }
 `;
 
