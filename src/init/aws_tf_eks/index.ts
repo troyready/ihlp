@@ -57,13 +57,12 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "~> 3.63"
+      version = "~> 5.33"
     }
 
-    # https://github.com/hashicorp/terraform-provider-http/issues/49
     http = {
-      source  = "terraform-aws-modules/http"
-      version = "~> 2.4"
+      source  = "hashicorp/http"
+      version = "~> 3.3"
     }
   }
 
@@ -80,6 +79,9 @@ variable "cluster_name" {
 variable "cluster_version" {
   default = null
   type    = string
+}
+variable "kubectl_access_principal_arn" {
+  type = string
 }
 variable "region" {
   type = string
@@ -99,10 +101,11 @@ provider "aws" {
 
 # Data and resources
 data "aws_availability_zones" "available" {}
+data "aws_partition" "current" {}
 
 module "vpc" {
   source  = "terraform-aws-modules/vpc/aws"
-  version = "~> 3.10.0"
+  version = "~> 5.7.0"
 
   cidr               = var.vpc_cidr
   enable_nat_gateway = true
@@ -238,6 +241,11 @@ resource "aws_eks_cluster" "cluster" {
   # version doesn't need to be specified until it's time to upgrade
   version = var.cluster_version
 
+  access_config {
+    authentication_mode                         = "API"
+    bootstrap_cluster_creator_admin_permissions = false
+  }
+
   vpc_config {
     subnet_ids = module.vpc.private_subnets[*]
 
@@ -257,11 +265,30 @@ resource "aws_eks_cluster" "cluster" {
 # or the TF EKS resources gets more advanced support:
 # https://github.com/hashicorp/terraform-provider-aws/pull/11426
 data "http" "wait_for_cluster" {
-  ca_certificate = base64decode(aws_eks_cluster.cluster.certificate_authority[0].data)
-  url            = format("%s/healthz", aws_eks_cluster.cluster.endpoint)
+  ca_cert_pem = base64decode(aws_eks_cluster.cluster.certificate_authority[0].data)
+  url         = format("%s/healthz", aws_eks_cluster.cluster.endpoint)
 
   # https://github.com/terraform-aws-modules/terraform-aws-eks/pull/1253#issuecomment-784968862
-  timeout = 15 * 60
+  request_timeout_ms = 15 * 60 * 1000
+}
+
+resource "aws_eks_access_entry" "cluster_admin" {
+  cluster_name  = aws_eks_cluster.cluster.name
+  principal_arn = var.kubectl_access_principal_arn
+  tags          = var.tags
+
+  depends_on = [
+    data.http.wait_for_cluster,
+  ]
+}
+resource "aws_eks_access_policy_association" "cluster_admin" {
+  cluster_name  = aws_eks_cluster.cluster.name
+  policy_arn    = "arn:\${data.aws_partition.current.partition}:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
+  principal_arn = aws_eks_access_entry.cluster_admin.principal_arn
+
+  access_scope {
+    type = "cluster"
+  }
 }
 `;
 
@@ -281,12 +308,7 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "~> 3.63"
-    }
-
-    kubernetes = {
-      source  = "hashicorp/kubernetes"
-      version = "~> 2.0"
+      version = "~> 5.33"
     }
 
     local = {
@@ -308,9 +330,6 @@ variable "az_count" {
   default = 3
 }
 variable "cluster_name" {
-  type = string
-}
-variable "kubectl_access_role_arn" {
   type = string
 }
 variable "node_group_desired_size" {
@@ -340,21 +359,8 @@ provider "aws" {
 }
 
 # Data and resources
-data "aws_caller_identity" "current" {}
-data "aws_partition" "current" {}
-
 data "aws_eks_cluster" "cluster" {
   name = var.cluster_name
-}
-
-data "aws_eks_cluster_auth" "cluster_auth" {
-  name = data.aws_eks_cluster.cluster.id
-}
-
-provider "kubernetes" {
-  host                   = data.aws_eks_cluster.cluster.endpoint
-  cluster_ca_certificate = base64decode(data.aws_eks_cluster.cluster.certificate_authority[0].data)
-  token                  = data.aws_eks_cluster_auth.cluster_auth.token
 }
 
 data "aws_iam_policy_document" "node-assume-role-policy" {
@@ -394,38 +400,18 @@ resource "aws_iam_role_policy_attachment" "node-AmazonSSMManagedInstanceCore" {
   role       = aws_iam_role.node.name
 }
 
-resource "kubernetes_config_map" "aws_auth_configmap" {
-  data = {
-    mapRoles = <<YAML
-- rolearn: \${aws_iam_role.node.arn}
-  username: system:node:{{EC2PrivateDNSName}}
-  groups:
-    - system:bootstrappers
-    - system:nodes
-- rolearn: arn:\${data.aws_partition.current.partition}:iam::\${data.aws_caller_identity.current.account_id}:root
-  username: kubectl-root-access-user
-  groups:
-    - system:masters
-- rolearn: \${var.kubectl_access_role_arn}
-  username: kubectl-access-user
-  groups:
-    - system:masters
-YAML
+resource "aws_eks_access_entry" "node" {
+  cluster_name  = var.cluster_name
+  principal_arn = aws_iam_role.node.arn
+  tags          = var.tags
+  type          = "EC2_LINUX" # https://github.com/aws/karpenter-provider-aws/issues/5369#issuecomment-1927074554
 
-#     # In place of, or addition to, the IAM role ^ defined here in the system:masters group,
-#     # individual IAM users can be specified by adding mapUsers to the data block:
-#     mapUsers = <<YAML
-# - userarn: arn:aws:iam::123456789012:user/fitzwilliam.darcy
-#   username: fitzwilliam.darcy
-#   groups:
-#     - system:masters
-# YAML
-  }
-
-  metadata {
-    name      = "aws-auth"
-    namespace = "kube-system"
-  }
+  depends_on = [
+    aws_iam_role_policy_attachment.node-AmazonEKSWorkerNodePolicy,
+    aws_iam_role_policy_attachment.node-AmazonEKS_CNI_Policy,
+    aws_iam_role_policy_attachment.node-AmazonEC2ContainerRegistryReadOnly,
+    aws_iam_role_policy_attachment.node-AmazonSSMManagedInstanceCore,
+  ]
 }
 
 data "aws_ssm_parameter" "vpc_private_subnet_ids" {
@@ -454,14 +440,8 @@ resource "aws_eks_node_group" "node" {
     ]
   }
 
-  # Ensure that IAM Role permissions are created before and deleted after EKS Node Group handling.
-  # Otherwise, EKS will not be able to properly delete EC2 Instances and Elastic Network Interfaces.
   depends_on = [
-    aws_iam_role_policy_attachment.node-AmazonEKSWorkerNodePolicy,
-    aws_iam_role_policy_attachment.node-AmazonEKS_CNI_Policy,
-    aws_iam_role_policy_attachment.node-AmazonEC2ContainerRegistryReadOnly,
-    aws_iam_role_policy_attachment.node-AmazonSSMManagedInstanceCore,
-    kubernetes_config_map.aws_auth_configmap,
+    aws_eks_access_entry.node,
   ]
 }
 
@@ -605,9 +585,8 @@ export async function awsTfEks(): Promise<void> {
 const envOptions = {
   dev: {
     clusterName: "dev-k8s",
-    kubectlAccessRoleArn: "YOURROLEARNHERE",
+    kubectlAccessPrincipalArn: "YOURROLEARNHERE",
     namespace: "dev-k8s-infra",
-    repoName: "dev-flux",
     tags: {
       environment: "dev",
       namespace: "dev-k8s-infra",
@@ -616,9 +595,8 @@ const envOptions = {
   },
   prod: {
     clusterName: "prod-k8s",
-    kubectlAccessRoleArn: "YOURROLEARNHERE",
+    kubectlAccessPrincipalArn: "YOURROLEARNHERE",
     namespace: "prod-k8s-infra",
-    repoName: "prod-flux",
     tags: {
       environment: "prod",
       namespace: "prod-k8s-infra",
@@ -664,6 +642,8 @@ const ihlpConfig: IHLPConfig = {
             terraformVersion: envOptions[process.env.IHLP_ENV].tfVersion, // specify here or in .terraform-version file in terraform directory
             variables: {
               cluster_name: envOptions[process.env.IHLP_ENV].clusterName,
+              kubectl_access_principal_arn:
+                envOptions[process.env.IHLP_ENV].kubectlAccessPrincipalArn,
               region: "\${env IHLP_LOCATION}",
               tags: envOptions[process.env.IHLP_ENV].tags,
             },
@@ -687,8 +667,6 @@ const ihlpConfig: IHLPConfig = {
             terraformVersion: envOptions[process.env.IHLP_ENV].tfVersion, // specify here or in .terraform-version file in terraform directory
             variables: {
               cluster_name: envOptions[process.env.IHLP_ENV].clusterName,
-              kubectl_access_role_arn:
-                envOptions[process.env.IHLP_ENV].kubectlAccessRoleArn,
               region: "\${env IHLP_LOCATION}",
               tags: envOptions[process.env.IHLP_ENV].tags,
             },
@@ -745,7 +723,7 @@ This repo represents a sample Terraform infrastructure deployment of EKS. It als
 
 ### Deployment
 
-1. Update the \`kubectlAccessRoleArn\` values in [ihlp.ts](./ihlp.ts) to specify the IAM role to which cluster admin access should be granted.
+1. Update the \`kubectlAccessPrincipalArn\` values in [ihlp.ts](./ihlp.ts) to specify the IAM role to which cluster admin access should be granted.
    E.g., if you assume an IAM role for operating in your account \`aws sts get-caller-identity --query 'Arn' --output text\` will show you the assumed role principal like:
 
     \`\`\`text
@@ -755,12 +733,10 @@ This repo represents a sample Terraform infrastructure deployment of EKS. It als
     You can use that arn to determine the IAM role arn for ihlp.ts:
 
     \`\`\`ts
-    kubectlAccessRoleArn: "arn:aws:iam::123456789012:role/myIamRole",
+    kubectlAccessPrincipalArn: "arn:aws:iam::123456789012:role/myIamRole",
     \`\`\`
 
-    (For any other configuration, like using IAM users via \`mapUsers\`, see the \`kubernetes_config_map\` resource in \`eks-auth-and-nodes.tf/main.tf\`)
-
-2. After updating the role ARN, deploy to the dev environment (\`npx ihlp deploy -a -e dev\`).
+2. After updating the principal ARN, deploy to the dev environment (\`npx ihlp deploy -a -e dev\`).
    This will take some time to complete.
 
 ### Post-Deployment
@@ -775,7 +751,7 @@ It is **strongly recommended** to [disable public access](https://docs.aws.amazo
 
 An IAM OIDC identity provider is configured (see \`aws_iam_openid_connect_provider\` in the [eks-auth-and-nodes.tf](./eks-auth-and-nodes.tf/main.tf) module) to allow containers access to AWS APIs (by way of annotated k8s service accounts).
 
-The example [job-s3-echo.tf](./job-s3-echo.tf/main.tf) module creates an IAM role, a k8s service account annotated with the role, and a job using the service account to place an object on S3 (see the bucket starting with \`dev-eks-s3-echo-\` after deployment).
+The example [job-s3-echo.tf](./job-s3-echo.tf/main.tf) module creates an IAM role, a k8s service account annotated with the role, and a job using the service account to store an object in S3 (see the bucket starting with \`dev-eks-s3-echo-\` after deployment).
 `;
 
   const s3EchoTfConfig = `# Backend setup
@@ -787,7 +763,7 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "~> 3.63"
+      version = "~> 5.33"
     }
 
     kubernetes = {
@@ -849,7 +825,6 @@ data "aws_ssm_parameter" "oidc_iam_provider_cluster_arn" {
 }
 
 resource "aws_s3_bucket" "bucket" {
-  acl           = "private"
   bucket_prefix = "\${terraform.workspace}-eks-\${local.job_name}-"
   force_destroy = "true"
   tags          = var.tags
@@ -936,6 +911,19 @@ resource "time_sleep" "wait_for_service_account_creation" {
   ]
 }
 
+resource "kubernetes_secret" "service_account" {
+  metadata {
+    annotations = {
+      "kubernetes.io/service-account.name" = kubernetes_service_account.service_account.metadata[0].name
+    }
+
+    generate_name = "\${local.sa_name}-"
+  }
+
+  type                           = "kubernetes.io/service-account-token"
+  wait_for_service_account_token = true
+}
+
 resource "kubernetes_job" "job" {
   metadata {
     name = local.job_name
@@ -975,16 +963,16 @@ resource "kubernetes_job" "job" {
 
           volume_mount {
             mount_path = "/var/run/secrets/kubernetes.io/serviceaccount"
-            name       = kubernetes_service_account.service_account.default_secret_name
+            name       = kubernetes_secret.service_account.metadata[0].name
             read_only  = true
           }
         }
 
         volume {
-          name = kubernetes_service_account.service_account.default_secret_name
+          name = kubernetes_secret.service_account.metadata[0].name
 
           secret {
-            secret_name = kubernetes_service_account.service_account.default_secret_name
+            secret_name = kubernetes_secret.service_account.metadata[0].name
           }
         }
       }
