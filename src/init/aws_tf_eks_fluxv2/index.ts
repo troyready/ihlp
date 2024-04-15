@@ -15,7 +15,7 @@ export async function awsTfEksFluxV2(): Promise<void> {
 const envOptions = {
   dev: {
     clusterName: "dev-k8s",
-    kubectlAccessRoleArn: "YOURROLEARNHERE",
+    kubectlAccessPrincipalArn: "YOURROLEARNHERE",
     namespace: "dev-k8s-infra",
     repoName: "dev-flux",
     tags: {
@@ -26,7 +26,7 @@ const envOptions = {
   },
   prod: {
     clusterName: "prod-k8s",
-    kubectlAccessRoleArn: "YOURROLEARNHERE",
+    kubectlAccessPrincipalArn: "YOURROLEARNHERE",
     namespace: "prod-k8s-infra",
     repoName: "prod-flux",
     tags: {
@@ -74,6 +74,8 @@ const ihlpConfig: IHLPConfig = {
             terraformVersion: envOptions[process.env.IHLP_ENV].tfVersion, // specify here or in .terraform-version file in terraform directory
             variables: {
               cluster_name: envOptions[process.env.IHLP_ENV].clusterName,
+              kubectl_access_principal_arn:
+                envOptions[process.env.IHLP_ENV].kubectlAccessRoleArn,
               region: "\${env IHLP_LOCATION}",
               tags: envOptions[process.env.IHLP_ENV].tags,
             },
@@ -97,8 +99,6 @@ const ihlpConfig: IHLPConfig = {
             terraformVersion: envOptions[process.env.IHLP_ENV].tfVersion, // specify here or in .terraform-version file in terraform directory
             variables: {
               cluster_name: envOptions[process.env.IHLP_ENV].clusterName,
-              kubectl_access_role_arn:
-                envOptions[process.env.IHLP_ENV].kubectlAccessRoleArn,
               region: "\${env IHLP_LOCATION}",
               tags: envOptions[process.env.IHLP_ENV].tags,
             },
@@ -128,38 +128,6 @@ const ihlpConfig: IHLPConfig = {
             workspace: process.env.IHLP_ENV,
           },
           path: "flux-repo.tf",
-          type: "terraform",
-        },
-        {
-          // initial deployment requires target of SSH key
-          name: "flux-ssh-key",
-          options: {
-            backendConfig: {
-              bucket: \`\\\${aws-cfn-output stack=\${
-                envOptions[process.env.IHLP_ENV].namespace
-              }-tf-state,output=BucketName}\`,
-              dynamodb_table: \`\\\${aws-cfn-output stack=\${
-                envOptions[process.env.IHLP_ENV].namespace
-              }-tf-state,output=TableName}\`,
-              region: "\${env IHLP_LOCATION}",
-            },
-            targets: [
-              "aws_iam_user.flux",
-              "aws_iam_user_ssh_key.flux",
-            ],
-            terraformVersion: envOptions[process.env.IHLP_ENV].tfVersion,
-            variables: {
-              cluster_name: envOptions[process.env.IHLP_ENV].clusterName,
-              region: "\${env IHLP_LOCATION}",
-              repo_name: envOptions[process.env.IHLP_ENV].repoName,
-              tags: envOptions[process.env.IHLP_ENV].tags,
-              target_path: \`/clusters/\${
-                envOptions[process.env.IHLP_ENV].clusterName
-              }\`,
-            },
-            workspace: process.env.IHLP_ENV,
-          },
-          path: "flux.tf",
           type: "terraform",
         },
         {
@@ -219,7 +187,7 @@ This repo represents a sample Terraform infrastructure deployment of EKS & [Flux
 
 #### Part 1: Deploying Flux
 
-1. Update the \`kubectlAccessRoleArn\` values in [ihlp.ts](./ihlp.ts) to specify the IAM role to which cluster admin access should be granted.
+1. Update the \`kubectlAccessPrincipalArn\` values in [ihlp.ts](./ihlp.ts) to specify the IAM principal (e.g. Role) to which cluster admin access should be granted.
    E.g., if you assume an IAM role for operating in your account \`aws sts get-caller-identity --query 'Arn' --output text\` will show you the assumed role principal like:
 
     \`\`\`text
@@ -229,12 +197,10 @@ This repo represents a sample Terraform infrastructure deployment of EKS & [Flux
     You can use that arn to determine the IAM role arn for ihlp.ts:
 
     \`\`\`ts
-    kubectlAccessRoleArn: "arn:aws:iam::123456789012:role/myIamRole",
+    kubectlAccessPrincipalArn: "arn:aws:iam::123456789012:role/myIamRole",
     \`\`\`
 
-    (For any other configuration, like using IAM users via \`mapUsers\`, see the \`kubernetes_config_map\` resource in \`eks-base.tf/main.tf\`)
-
-2. After updating the role ARN, deploy to the dev environment (\`npx ihlp deploy -a -e dev\`).
+2. After updating the principal ARN, deploy to the dev environment (\`npx ihlp deploy -a -e dev\`).
    This will take some time to complete.
 
 #### Part 2: Pushing to the Flux repo
@@ -282,7 +248,7 @@ It is **strongly recommended** to [disable public access](https://docs.aws.amazo
 
 ### Teardown
 
-\`npx ihlp destroy -a -e dev --target flux-ssh-key repo eks backend\` will teardown all infrastructure deployed as part of this project (setting the \`target\` will avoid timeouts while trying to delete the flux namespace in k8s).
+\`npx ihlp destroy -a -e dev\` will teardown all infrastructure deployed as part of this project.
 `;
 
   const podinfoKustomization = `---
@@ -323,7 +289,7 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "~> 3.63"
+      version = "~> 5.33"
     }
   }
 
@@ -362,17 +328,12 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "~> 3.63"
+      version = "~> 5.33"
     }
 
-    flux = {
-      source  = "fluxcd/flux"
-      version = "~> 0.7"
-    }
-
-    kubectl = {
-      source  = "gavinbunney/kubectl"
-      version = "~> 1.0"
+    helm = {
+      source  = "hashicorp/helm"
+      version = ">= 2.12"
     }
 
     kubernetes = {
@@ -419,12 +380,10 @@ provider "aws" {
   region = var.region
 }
 
-provider "flux" {}
-
 # Would be ideal to use aws credential helper instead, if/when go-git gains support for it
 # (then would need to see about adding support to Flux itself)
-# https://github.com/go-git/go-git/issues/250
-resource "tls_private_key" "main" {
+# https://github.com/go-git/go-git/issues/250 / https://github.com/go-git/go-git/issues/490
+resource "tls_private_key" "flux" {
   algorithm = "RSA"
   rsa_bits  = 4096
 }
@@ -463,7 +422,7 @@ resource "aws_iam_user_policy" "flux" {
 
 resource "aws_iam_user_ssh_key" "flux" {
   encoding   = "SSH"
-  public_key = tls_private_key.main.public_key_openssh
+  public_key = tls_private_key.flux.public_key_openssh
   username   = aws_iam_user.flux.name
 }
 
@@ -476,121 +435,105 @@ data "aws_eks_cluster_auth" "cluster_auth" {
 }
 
 provider "kubernetes" {
-  host                   = data.aws_eks_cluster.cluster.endpoint
   cluster_ca_certificate = base64decode(data.aws_eks_cluster.cluster.certificate_authority.0.data)
+  host                   = data.aws_eks_cluster.cluster.endpoint
   token                  = data.aws_eks_cluster_auth.cluster_auth.token
 }
 
-resource "kubernetes_namespace" "flux" {
+provider "helm" {
+  kubernetes {
+    cluster_ca_certificate = base64decode(data.aws_eks_cluster.cluster.certificate_authority[0].data)
+    host                   = data.aws_eks_cluster.cluster.endpoint
+    token                  = data.aws_eks_cluster_auth.cluster_auth.token
+  }
+}
+
+# =============================================================================================
+# Bootstrap cluster using flux2 helm chart. This chart simply installs flux2
+# Ref: https://artifacthub.io/packages/helm/fluxcd-community/flux2
+# =============================================================================================
+
+# Note: Do not change the namespace name. This mimics the behaviour of "flux bootstrap".
+resource "kubernetes_namespace" "flux_system" {
   metadata {
     name = "flux-system"
   }
-
-  lifecycle {
-    ignore_changes = [
-      metadata[0].labels,
-    ]
-  }
 }
 
-data "flux_install" "main" {
-  target_path = var.target_path
+resource "helm_release" "flux2" {
+  repository = "https://fluxcd-community.github.io/helm-charts"
+  chart      = "flux2"
+  version    = "2.12.4"
+
+  name      = "flux2"
+  namespace = kubernetes_namespace.flux_system.metadata[0].name
 }
 
-data "flux_sync" "main" {
-  branch      = var.branch
-  target_path = var.target_path
+# =============================================================================================
+# Bootstrap cluster using flux2-sync helm chart to start reconciliation of resources.
+# Ref https://artifacthub.io/packages/helm/fluxcd-community/flux2-sync
+# flux2-sync is used to setup the GitRepository and Kustomization resources
+# =============================================================================================
 
-  # An alternate option to this substitution would be to use a CodeCommit ServiceSpecificCredential
-  # https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_service_specific_credential
-  url = replace(
-    data.aws_codecommit_repository.repo.clone_url_ssh,
-    "ssh://",
-    "ssh://\${aws_iam_user_ssh_key.flux.ssh_public_key_id}@"
-  )
-}
-
-provider "kubectl" {
-  host                   = data.aws_eks_cluster.cluster.endpoint
-  cluster_ca_certificate = base64decode(data.aws_eks_cluster.cluster.certificate_authority.0.data)
-  token                  = data.aws_eks_cluster_auth.cluster_auth.token
-  load_config_file       = false
-}
-
-data "kubectl_file_documents" "install" {
-  content = data.flux_install.main.content
-}
-
-data "kubectl_file_documents" "sync" {
-  content = data.flux_sync.main.content
-}
-
-locals {
-  install = [for v in data.kubectl_file_documents.install.documents : {
-    data : yamldecode(v)
-    content : v
-    }
-  ]
-  sync = [for v in data.kubectl_file_documents.sync.documents : {
-    data : yamldecode(v)
-    content : v
-    }
-  ]
-}
-
-resource "kubectl_manifest" "install" {
-  for_each = { for v in local.install : lower(join("/", compact([v.data.apiVersion, v.data.kind, lookup(v.data.metadata, "namespace", ""), v.data.metadata.name]))) => v.content }
-
-  yaml_body = each.value
-
-  depends_on = [
-    kubernetes_namespace.flux,
-  ]
-}
-
-# The dependency on the IAM User ssh_public_key_id will cause this to fail on initial deployment unless -target="aws_iam_user_ssh_key.flux" is used
-# (or the aws_iam_user_ssh_key resource is moved out of this module)
-resource "kubectl_manifest" "sync" {
-  for_each = { for v in local.sync : lower(join("/", compact([v.data.apiVersion, v.data.kind, lookup(v.data.metadata, "namespace", ""), v.data.metadata.name]))) => v.content }
-
-  yaml_body = each.value
-
-  depends_on = [
-    kubernetes_namespace.flux,
-  ]
-}
-
-resource "kubernetes_secret" "main" {
-
-  metadata {
-    name      = data.flux_sync.main.secret
-    namespace = data.flux_sync.main.namespace
-  }
+resource "kubernetes_secret" "ssh_keypair" {
+  type = "Opaque"
 
   data = {
-    identity       = tls_private_key.main.private_key_pem
-    "identity.pub" = tls_private_key.main.public_key_pem
+    "identity.pub" = tls_private_key.flux.public_key_openssh
+    identity       = tls_private_key.flux.private_key_pem
     known_hosts    = data.tls_ssh_key_scan.repo.public_host_key
   }
 
+  metadata {
+    name      = "ssh-keypair"
+    namespace = kubernetes_namespace.flux_system.metadata[0].name
+  }
+
+}
+
+resource "helm_release" "flux2_sync" {
+  repository = "https://fluxcd-community.github.io/helm-charts"
+  chart      = "flux2-sync"
+  version    = "1.8.2"
+
+  # Note: Do not change the name or namespace of this resource. These mimic the behaviour of "flux bootstrap".
+  name      = "flux-system"
+  namespace = kubernetes_namespace.flux_system.metadata[0].name
+
+  set {
+    name  = "gitRepository.spec.url"
+    # An alternate option to this substitution would be to use a CodeCommit ServiceSpecificCredential
+    # https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_service_specific_credential
+    value = replace(
+      data.aws_codecommit_repository.repo.clone_url_ssh,
+      "ssh://",
+      "ssh://\${aws_iam_user_ssh_key.flux.ssh_public_key_id}@"
+    )
+  }
+
+  set {
+    name  = "gitRepository.spec.ref.branch"
+    value = var.branch
+  }
+
+  set {
+    name  = "gitRepository.spec.secretRef.name"
+    value = kubernetes_secret.ssh_keypair.metadata[0].name
+  }
+
+  set {
+    name  = "gitRepository.spec.interval"
+    value = "1m"
+  }
+
+  set {
+    name  = "kustomization.spec.path"
+    value = var.target_path
+  }
+
   depends_on = [
-    kubectl_manifest.install,
+    helm_release.flux2,
   ]
-}
-
-resource "local_file" "install" {
-  content  = data.flux_install.main.content
-  filename = "\${path.module}/../\${var.repo_name}\${data.flux_install.main.path}"
-}
-
-resource "local_file" "sync" {
-  content  = data.flux_sync.main.content
-  filename = "\${path.module}/../\${var.repo_name}\${data.flux_sync.main.path}"
-}
-
-resource "local_file" "kustomize" {
-  content  = data.flux_sync.main.kustomize_content
-  filename = "\${path.module}/../\${var.repo_name}\${data.flux_sync.main.kustomize_path}"
 }
 `;
 
