@@ -5,6 +5,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Fixed
+- AWS EKS init generators: Update AWS CLI auth to support recent EKS versions
+
+### Changed
+- AWS EKS init generator updated to use access entries (in place of auth_map)
+- AWS EKS FluxV2 init generator updated to deploy v2.2.3
+- AWS Lambda Function init generators now default to JSON logging
 
 ## [0.10.2] - 2023-06-05
 ### Fixed
