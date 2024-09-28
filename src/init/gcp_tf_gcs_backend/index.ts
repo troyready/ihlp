@@ -63,12 +63,12 @@ const envOptions = {
     // projectId: "",
     tfVersion: "1.2.8",
   },
-  prod: {
-    namespace: "prod-ihlp-proj",
-    bucketName: "prod-ihlp-proj-${randomSuffix}",
+  prd: {
+    namespace: "prd-ihlp-proj",
+    bucketName: "prd-ihlp-proj-${randomSuffix}",
     labels: {
-      environment: "prod",
-      namespace: "prod-ihlp-proj",
+      environment: "prd",
+      namespace: "prd-ihlp-proj",
     },
     // specify GCP project here or omit to inherit from \`gcloud auth application-default set-quota-project PROJECTID\`
     // projectId: "",

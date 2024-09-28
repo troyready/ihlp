@@ -43,17 +43,17 @@ Execute:
 npx ihlp deploy -e ENVIRONMENT
 \`\`\`
 
-e.g. \`npx ihlp deploy -e prod\`
+e.g. \`npx ihlp deploy -e prd\`
 `;
 
   const configContents = `import type { IHLPConfig } from "ihlp/lib/config";
 
 const envOptions = {
-  prod: {
-    namespace: "prod-example-website",
+  prd: {
+    namespace: "prd-example-website",
     tags: {
-      environment: "prod",
-      namespace: "prod-example-website",
+      environment: "prd",
+      namespace: "prd-example-website",
     },
     tfVersion: "1.3.5",
   },

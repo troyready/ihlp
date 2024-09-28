@@ -21,11 +21,11 @@ const envOptions = {
     },
     tfVersion: "1.2.8",
   },
-  prod: {
-    namespace: "prod-ihlp-proj",
+  prd: {
+    namespace: "prd-ihlp-proj",
     tags: {
-      environment: "prod",
-      namespace: "prod-ihlp-proj",
+      environment: "prd",
+      namespace: "prd-ihlp-proj",
     },
     tfVersion: "1.2.8",
   },

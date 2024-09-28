@@ -263,11 +263,11 @@ resource "aws_iam_role" "role" {
   assume_role_policy = data.aws_iam_policy_document.assume_role_policy.json
   name_prefix        = local.name_prefix
   tags               = var.tags
+}
 
-  inline_policy {
-    name   = "IntegrationTestPermissions"
-    policy = data.aws_iam_policy_document.policy.json
-  }
+resource "aws_iam_role_policy" "role_permissions" {
+  role   = aws_iam_role.role.id
+  policy = data.aws_iam_policy_document.policy.json
 }
 
 output "role_arn" {

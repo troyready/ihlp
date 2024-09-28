@@ -27,18 +27,18 @@ const envOptions = {
     },
     tfVersion: "1.2.8",
   },
-  prod: {
-    namespace: "prod-ihlp-proj",
+  prd: {
+    namespace: "prd-ihlp-proj",
     azureSubId: "SUBSCRIPTION_ID_HERE",
-    storageAccountName: "prodihlpproj${randomSuffix}",
+    storageAccountName: "prdihlpproj${randomSuffix}",
     tags: {
-      environment: "prod",
-      namespace: "prod-ihlp-proj",
+      environment: "prd",
+      namespace: "prd-ihlp-proj",
     },
     tfVersion: "1.2.8",
   },
 };
-    
+
 const ihlpConfig: IHLPConfig = {
   deployments: [
     {

@@ -25,13 +25,13 @@ const envOptions = {
     },
     tfVersion: "1.2.8",
   },
-  prod: {
-    namespace: "prod-ihlp-proj",
+  prd: {
+    namespace: "prd-ihlp-proj",
     nodeVersion: "18",
     sourcesContent: false,
     tags: {
-      environment: "prod",
-      namespace: "prod-ihlp-proj",
+      environment: "prd",
+      namespace: "prd-ihlp-proj",
     },
     tfVersion: "1.2.8",
   },
@@ -330,6 +330,7 @@ data "aws_iam_policy_document" "lambda_role_assume_role_policy" {
 }
 
 data "aws_iam_policy_document" "hello_world_lambda_role_policy" {
+  # Logging permissions
   statement {
     actions = [
       "logs:CreateLogStream",
@@ -350,11 +351,11 @@ resource "aws_iam_role" "hello_world_lambda" {
   name_prefix          = "\${terraform.workspace}-hello-world-"
   permissions_boundary = var.role_boundary_arn
   tags                 = var.tags
+}
 
-  inline_policy {
-    name   = "lambda-permissions"
-    policy = data.aws_iam_policy_document.hello_world_lambda_role_policy.json
-  }
+resource "aws_iam_role_policy" "hello_world_lambda_permissions" {
+  role   = aws_iam_role.hello_world_lambda.id
+  policy = data.aws_iam_policy_document.hello_world_lambda_role_policy.json
 }
 
 resource "aws_lambda_function" "hello_world" {
@@ -376,6 +377,10 @@ resource "aws_lambda_function" "hello_world" {
     log_format = "JSON"
     log_group  = aws_cloudwatch_log_group.hello_world_function.name
   }
+
+    depends_on = [
+      aws_iam_role_policy.hello_world_lambda_permissions,
+    ]
 }
 `;
 

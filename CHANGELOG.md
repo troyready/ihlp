@@ -5,6 +5,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Fixed
+- TF init generators: Stop usage of deprecated AWS IAM Role inline_policies argument
+
+### Changed
+- Changed init generators to generate `prd` environment instead of `prod` (for 3-letter consistency with dev)
 
 ## [0.10.3] - 2024-04-14
 ### Fixed
@@ -105,7 +110,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Terraform Cloud init generator
 
 ### Fixed
-- Inconsistent directory name in sample azure template 
+- Inconsistent directory name in sample azure template
 
 ## [0.4.4] - 2021-12-06
 ### Fixed
