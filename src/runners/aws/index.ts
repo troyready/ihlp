@@ -6,6 +6,7 @@
 
 import * as fs from "fs";
 import {
+  Capability,
   CloudFormationClient,
   CloudFormationClientConfig,
   CreateChangeSetCommandInput,
@@ -192,7 +193,7 @@ async function getChangeSetInput(
       "CAPABILITY_AUTO_EXPAND",
       "CAPABILITY_IAM",
       "CAPABILITY_NAMED_IAM",
-    ],
+    ] as Capability[],
     ChangeSetName: options.stackName + uuidv4(),
     StackName: options.stackName,
     TemplateBody: await fs.promises.readFile(options.templatePath!, "utf8"),
