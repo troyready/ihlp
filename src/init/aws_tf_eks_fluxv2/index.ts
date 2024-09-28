@@ -24,14 +24,14 @@ const envOptions = {
     },
     tfVersion: "1.2.8",
   },
-  prod: {
-    clusterName: "prod-k8s",
+  prd: {
+    clusterName: "prd-k8s",
     kubectlAccessPrincipalArn: "YOURROLEARNHERE",
-    namespace: "prod-k8s-infra",
-    repoName: "prod-flux",
+    namespace: "prd-k8s-infra",
+    repoName: "prd-flux",
     tags: {
-      environment: "prod",
-      namespace: "prod-k8s-infra",
+      environment: "prd",
+      namespace: "prd-k8s-infra",
     },
     tfVersion: "1.2.8",
   },
